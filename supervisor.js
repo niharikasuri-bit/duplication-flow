@@ -231,7 +231,8 @@
         <header class="rec-head"><h3 id="rec-${side}">Record ${side}</h3><span class="rec-id">${esc(rec.id)}</span></header>
         <dl class="rec-rows">${rows.map(([l, va, vb, check = true]) => {
           const v = side === "A" ? va : vb, d = side === "B" && check && String(va) !== String(vb);
-          return `<div class="${d ? "is-diff" : ""}"><dt>${esc(l)}</dt><dd>${esc(v)}${d ? '<span class="sr-only"> (different from record A)</span>' : ""}</dd></div>`;
+          const val = esc(v).replace(/ · (.+)$/, '<span class="rec-sub">$1</span>');
+          return `<div class="${d ? "is-diff" : ""}"><dt>${esc(l)}</dt><dd>${val}${d ? '<span class="sr-only"> (different from record A)</span>' : ""}</dd></div>`;
         }).join("")}</dl>
       </section>`;
     return `<div class="rec-pair">${panel("A", a)}${panel("B", b)}</div>`;
@@ -274,7 +275,7 @@
   function viewReview(f) {
     const isHH = f.type === "household";
     const rows = isHH
-      ? [["Household head", f.a.head, f.b.head], ["Household coordinates", f.a.coords, f.b.coords, false], ["Number of members", f.a.members, f.b.members],
+      ? [["Household head", f.a.head, f.b.head], ["Household coordinates", f.a.coords, `${f.b.coords} · ${f.distance} m from A`], ["Number of members", f.a.members, f.b.members],
          ["Created by", f.a.by, f.b.by, false], ["Created", f.a.at, f.b.at, false], ["Sync at creation", f.a.sync, f.b.sync, false]]
       : [["Full name", f.a.name, f.b.name], ["Gender", f.a.gender, f.b.gender], ["Age", f.a.age, f.b.age], ["Date of birth", f.a.dob, f.b.dob],
          ["Mobile number", f.a.mobile, f.b.mobile], ["ID number", f.a.idNo, f.b.idNo], ["Created by", f.a.by, f.b.by, false], ["Created", f.a.at, f.b.at, false], ["Sync at creation", f.a.sync, f.b.sync, false]];
@@ -291,13 +292,13 @@
               ${f.reason ? `<div><h3>Worker’s reason</h3><p>The worker added record B as a new person: “${esc(f.reason)}”.</p></div>` : ""}
               ${f.searchTerm ? `<div><h3>Search before create</h3><p>The worker searched “${esc(f.searchTerm)}” before creating household B.</p></div>` : ""}
             </div>` : ""}
+            ${isHH ? `<h3 class="sub-title">People in both households</h3>
+            <div class="pair-list">${f.pairs.map(p => `<div class="pair-row">
+                <div><span class="pair-lbl">Household A</span><span>${esc(p.a)}</span></div>
+                <div><span class="pair-lbl">Household B</span><span>${esc(p.b)}</span></div>
+                <div class="pair-match">${p.match ? tierTag(p.match) : `<span class="pair-none">No match</span>`}</div>
+              </div>`).join("")}</div>` : ""}
           </div>
-          ${isHH ? `<div class="card card-pad"><h2 class="card-title">Location</h2><p class="card-sub">Household coordinates of A and B.</p>${mapSvg(f.distance, [f.a.head, f.b.head])}</div>` : ""}
-          ${isHH ? `<div class="card card-pad">
-            <h2 class="card-title">People in both households</h2>
-            <table class="cmp"><thead><tr><th scope="col">Household A</th><th scope="col">Household B</th><th scope="col">Match</th></tr></thead>
-              <tbody>${f.pairs.map(p => `<tr><td>${esc(p.a)}</td><td>${esc(p.b)}</td><td>${p.match ? tierTag(p.match) : "–"}</td></tr>`).join("")}</tbody></table>
-          </div>` : ""}
         </div>
         <div class="review-side">
           ${decisionCard(f, "review")}
@@ -316,11 +317,15 @@
             <h2 class="card-title">${esc(f.title)}</h2>
             <p class="card-sub">Household: ${esc(f.household)} · ${esc(f.gender)}, ${esc(f.age)} · Round ${f.round}</p>
             ${f.note ? `<p class="card-sub" style="color:var(--text)">${esc(f.note)}</p>` : ""}
-            <table class="cmp">
-              <caption class="sr-only">Both deliveries this round</caption>
-              <thead><tr><th scope="col">Delivery</th><th scope="col">Time</th><th scope="col">Household coordinates</th><th scope="col">Worker</th><th scope="col">Device sync</th></tr></thead>
-              <tbody>${f.deliveries.map((d, i) => `<tr><th scope="row">${i + 1}${d.person ? `<span class="cell-sub">${esc(d.person)}</span>` : ""}</th><td>${esc(d.time)}</td><td>${esc(d.coords)}</td><td>${esc(d.worker)}</td><td class="${d.failed ? "is-diff" : ""}">${esc(d.sync)}</td></tr>`).join("")}</tbody>
-            </table>
+            <div class="rec-pair">${f.deliveries.map((d, i) => `<section class="rec" aria-labelledby="dl-${i}">
+                <header class="rec-head"><h3 id="dl-${i}">Delivery ${i + 1}</h3>${d.person ? `<span class="rec-id">${esc(d.person)}</span>` : ""}</header>
+                <dl class="rec-rows">
+                  <div><dt>Time</dt><dd>${esc(d.time)}</dd></div>
+                  <div><dt>Household coordinates</dt><dd>${esc(d.coords)}</dd></div>
+                  <div><dt>Worker</dt><dd>${esc(d.worker)}</dd></div>
+                  <div class="${d.failed ? "is-diff" : ""}"><dt>Device sync</dt><dd>${esc(d.sync)}</dd></div>
+                </dl>
+              </section>`).join("")}</div>
           </div>
         </div>
         <div class="review-side">${decisionCard(f, "delivery")}</div>
