@@ -10,6 +10,12 @@
   "use strict";
 
   const STORE_KEY = "duplication-supervisor-v7";
+  // District supervisor responses, shared with the desktop supervisor (worker → district supervisor → supervisor).
+  const DS_KEY = "duplication-ds-responses-v1";
+  const SEED_DS = () => ({ "FLG-1040": { decision: "Confirmed", reason: "Area overlap", comment: "Two teams covered Muhammad Bah’s area on the same day.", at: "Today, 11:05" } });
+  const dsResponse = id => { let ds = null; try { ds = JSON.parse(localStorage.getItem(DS_KEY)); } catch (e) { /* private mode */ } return (ds || SEED_DS())[id]; };
+  const DS_LABEL = (f, d) => d === "Confirmed" ? (f.type === "delivery" ? "Confirmed double vaccination" : "Confirmed duplicate") : "Not a duplicate";
+
   const TIER_RANK = { Definite: 3, Strong: 2, Low: 1 };
   const ROOT_CAUSES = ["Sync failed", "Spelling", "Info mismatch", "Area overlap", "Other"];
   const DELIVERY_CAUSES = ["Sync failed", "Area overlap", "Other"];
@@ -170,7 +176,7 @@
         <td><span class="cell-strong">${esc(f.id)}</span><span class="cell-sub">${esc(f.raised)}</span></td>
         <td>${typeTag(f.type)}</td>
         <td>${tierTag(f.tier)}</td>
-        <td>${esc(f.title)}<span class="cell-sub">${esc(f.source)}${f.reason ? ` · “${esc(f.reason)}”` : ""}</span>${f.syncFailed ? `<span class="cell-sub">Created after a failed sync</span>` : ""}</td>
+        <td>${esc(f.title)}<span class="cell-sub">${esc(f.source)}${f.reason ? ` · “${esc(f.reason)}”` : ""}</span>${f.syncFailed ? `<span class="cell-sub">Created after a failed sync</span>` : ""}${dsResponse(f.id) ? `<span class="cell-sub ds-sub">District supervisor: ${esc(DS_LABEL(f, dsResponse(f.id).decision))}</span>` : ""}</td>
         <td>${esc(f.area)}</td>
         <td>${esc(f.team)}</td>
         <td>${esc(f.collector)}</td>
@@ -247,6 +253,20 @@
   }
 
   // Same structure on every review: summary, sync notice, records, people.
+
+  function dsCard(f) {
+    const r = dsResponse(f.id);
+    if (!r) return "";
+    return `<div class="card card-pad ds-card">
+        <h2 class="card-title">District supervisor’s response</h2>
+        <dl class="flag-kv">
+          <div><dt>Decision</dt><dd>${esc(DS_LABEL(f, r.decision))}</dd></div>
+          <div><dt>Reason for decision</dt><dd>${esc(r.reason)}</dd></div>
+          <div><dt>Responded</dt><dd>${esc(r.at)}</dd></div>
+        </dl>
+        ${r.comment ? `<p class="ds-comment">“${esc(r.comment)}”</p>` : ""}
+      </div>`;
+  }
   function flagSummary(f) {
     return `<div class="card card-pad">
         <dl class="flag-kv">
@@ -349,6 +369,7 @@
       <div class="review-grid">
         <div class="review-main">
           ${flagSummary(f)}
+          ${dsCard(f)}
           <div class="card card-pad">
             <h2 class="card-title">${isHH ? "Households" : "People"}</h2>
             ${recordPanels(rows, f.a, f.b)}
@@ -397,6 +418,7 @@
       <div class="review-grid">
         <div class="review-main">
           ${flagSummary(f)}
+          ${dsCard(f)}
           <div class="card card-pad">
             <h2 class="card-title">Vaccinations</h2>
             ${recordPanels(rows, { id: "" }, { id: "" })}

@@ -12,7 +12,11 @@
  */
 (() => {
   "use strict";
-  const STORE_KEY = "duplication-district-v2";
+  const STORE_KEY = "duplication-district-v3";
+  // District supervisor responses, shared with the desktop supervisor (worker → district supervisor → supervisor).
+  const DS_KEY = "duplication-ds-responses-v1";
+  const SEED_DS = () => ({ "FLG-1040": { decision: "Confirmed", reason: "Area overlap", comment: "Two teams covered Muhammad Bah’s area on the same day.", at: "Today, 11:05" } });
+
   const ROOT_CAUSES = ["Sync failed", "Spelling", "Info mismatch", "Area overlap", "Other"];
   const TIER_RANK = { Definite: 3, Strong: 2, Low: 1 };
   const ISSUE = { delivery: "Possible double vaccination", household: "Possible duplicate household", individual: "Possible duplicate person" };
@@ -102,7 +106,12 @@
     }
   ];
 
-  const fresh = () => ({ flags: SEED_FLAGS() });
+  const fresh = () => {
+    const flags = SEED_FLAGS(), ds = SEED_DS();
+    flags.forEach(f => { if (ds[f.id]) Object.assign(f, { status: ds[f.id].decision, rootCause: ds[f.id].reason, comment: ds[f.id].comment }); });
+    try { localStorage.setItem(DS_KEY, JSON.stringify(ds)); } catch (e) { /* private mode */ }
+    return { flags };
+  };
   let store;
   try { store = JSON.parse(localStorage.getItem(STORE_KEY)) || fresh(); } catch (e) { store = fresh(); }
   const save = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) { /* private mode */ } };
@@ -348,6 +357,7 @@
       if (!state.cause) { err.hidden = false; document.querySelector('input[name="cause"]').focus(); return; }
       const f = flag();
       f.status = state.decision; f.rootCause = state.cause; f.comment = state.comment.trim(); save();
+      try { const ds = JSON.parse(localStorage.getItem(DS_KEY)) || {}; ds[f.id] = { decision: f.status, reason: f.rootCause, comment: f.comment, at: "Today, " + new Date().toTimeString().slice(0, 5) }; localStorage.setItem(DS_KEY, JSON.stringify(ds)); } catch (e) { /* private mode */ }
       state.history = ["home", "queue"];
       go("success", { replace: true });
     }
