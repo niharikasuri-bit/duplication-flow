@@ -168,7 +168,8 @@
     return `<ul class="dq-list">${rows.map(f => `<li><article class="dq-card ${f.status === "Confirmed" ? "acc-ok" : f.status === "Not a duplicate" ? "acc-none" : ""}" aria-labelledby="t-${f.id}">
         <p class="dq-time">${ICON.clock}${esc(f.raised)} · ${esc(f.area)}</p>
         <div class="dq-head"><h3 class="dq-id" id="t-${f.id}">${esc(f.id)}</h3>${f.status === "Open" ? tierPill(f.tier) : statusPill(f.status)}</div>
-        <div class="dq-info"><span class="dq-label dq-reason-label">${esc(whyFlagged(f))}</span><span class="dq-value">${esc(f.title)}</span></div>
+        <div class="dq-info"><span class="dq-label">Reason</span><span class="dq-value">${esc(whyFlagged(f))}</span></div>
+        <p class="dq-meta">${esc(f.collector)} · ${esc(f.team)}${f.syncFailed ? ` · <span class="dq-warn">Created after a failed sync</span>` : ""}</p>
         <button class="btn btn-primary dq-btn" data-action="open-flag" data-id="${esc(f.id)}">${f.status === "Open" ? "Review" : "View"}</button>
       </article></li>`).join("")}</ul>`;
   }
