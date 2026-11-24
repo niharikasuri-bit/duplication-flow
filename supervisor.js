@@ -269,7 +269,7 @@
          ["Mobile number", f.a.mobile, f.b.mobile], ["ID number", f.a.idNo, f.b.idNo], ["Created by", f.a.by, f.b.by, false], ["Created", f.a.at, f.b.at, false], ["Sync at creation", f.a.sync, f.b.sync, false]];
     return `${crumbs([["Home", "index.html"], ["Flag Queue", "#/flags"], [f.id]])}
       ${head("Review Possible Duplicate", isHH ? "Two households close to each other may be the same household. Compare the households and the people in them, then decide." : "Two people in the same household may be the same person. Compare the records, then decide.")}
-      <div class="signals">${typeTag(f.type)}${tierTag(f.tier)}${statusTag(f.status)}${f.syncFailed ? tag("Created after a failed sync", "warning") : ""}</div>
+      <div class="signals">${typeTag(f.type)}${tierTag(f.tier)}${f.syncFailed ? tag("Created after a failed sync", "warning") : ""}</div>
       <div class="review-grid">
         <div>
           <div class="card card-pad">
@@ -296,7 +296,7 @@
   function viewAlert(f) {
     return `${crumbs([["Home", "index.html"], ["Flag Queue", "#/flags"], [f.id]])}
       ${head("Review Delivery Alert", "The same child may have been vaccinated twice this round. Check both deliveries, decide and tag the root cause.")}
-      <div class="signals">${typeTag(f.type)}${tierTag(f.tier)}${statusTag(f.status)}</div>
+      <div class="signals">${typeTag(f.type)}${tierTag(f.tier)}</div>
       <div class="review-grid">
         <div>
           <div class="card card-pad">
