@@ -203,6 +203,12 @@
   }
   // One sync notice, same component and wording in the desktop and mobile review.
   const lastSync = s => { const m = /Last succeeded (.+)$/.exec(String(s || "")); return m ? m[1] : ""; };
+  // Why the flag might have happened: shown in the summary, under the reason.
+  function possibleCause(f) {
+    const failed = f.type === "delivery" ? f.deliveries.map((d, i) => d.failed ? [i + 1, d.sync] : null).filter(Boolean) : f.syncFailed ? [[2, f.b.sync]] : [];
+    if (!failed.length) return "";
+    return failed.map(([n, sync]) => `<div class="cause-row"><dt>Possible cause</dt><dd><span class="cause-val"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>Sync failed for record ${n}</span><span class="cause-sub">Saved while the phone was not synced${lastSync(sync) ? `. Last synced ${lastSync(sync)}` : ""}.</span></dd></div>`).join("");
+  }
   function syncNotice(f) {
     const items = f.type === "delivery"
       ? f.deliveries.map((d, i) => d.failed ? [i + 1, `This vaccination was saved while the phone was not synced${lastSync(d.sync) ? `. Last synced ${lastSync(d.sync)}` : ""}. The worker might not have seen the other vaccination.`] : null).filter(Boolean)
@@ -214,12 +220,12 @@
       <dl class="dq-kv">
         <div><dt>Flag ID</dt><dd>${esc(f.id)}</dd></div>
         <div><dt>Reason</dt><dd>${esc(ISSUE[f.type])}</dd></div>
+        ${possibleCause(f)}
         <div><dt>Match</dt><dd>${tierPill(f.tier)}</dd></div>
         ${f.type === "household" ? `<div><dt>Distance</dt><dd>${esc(f.distance)} m apart</dd></div>` : `<div><dt>Household</dt><dd>${esc(f.household)}</dd></div>`}
         ${f.reason ? `<div><dt>Worker’s reason</dt><dd>${esc(f.reason)}</dd></div>` : ""}
       </dl>
-    </div>
-    ${syncNotice(f)}`;
+    </div>`;
   const LEGEND = `<ul class="dq-legend" aria-label="Highlight key"><li class="k-same">Same</li><li class="k-similar">Similar</li><li class="k-diff">Different</li></ul>`;
   const section = (title, inner, legend = true) => `<section class="card dq-block"><h2 class="dq-section">${title}</h2>${legend ? LEGEND : ""}${inner}</section>`;
   const doneCard = f => f.status !== "Open" ? `<div class="card dq-done">${statusPill(f.status)}<p>Reason for decision: ${esc(f.rootCause || "–")}</p>${f.comment ? `<p>${esc(f.comment)}</p>` : ""}</div>` : "";

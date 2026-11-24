@@ -138,3 +138,10 @@
 .dq-pname { display: block; font-weight: 500; color: var(--text); }
 .dq-pmeta { display: block; margin-top: 2px; font-size: 12px; line-height: 16px; color: #707070; }
 .sync-notice { font-size: 13px; line-height: 18px; padding: 10px 12px; }
+
+/* Possible cause row in the summary */
+.cause-val { display: inline-flex; align-items: center; gap: 6px; color: #8A5A00; font-weight: 700; }
+.cause-val svg { width: 18px; height: 18px; flex: 0 0 18px; }
+.cause-sub { display: block; margin-top: 2px; font-size: 13px; line-height: 18px; font-weight: 400; color: #707070; }
+.dq-kv .cause-row { flex-direction: column; align-items: stretch; gap: 4px; }
+.dq-kv .cause-row dd { text-align: left; }

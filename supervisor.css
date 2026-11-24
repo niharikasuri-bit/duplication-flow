@@ -269,3 +269,9 @@ table.data tr.is-alert td:first-child { box-shadow: inset 3px 0 0 var(--error); 
 .flag-kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px 24px; }
 .flag-kv dt { font-size: 12px; line-height: 16px; color: var(--text-2); }
 .flag-kv dd { margin-top: 4px; font-size: 16px; line-height: 20px; font-weight: 700; color: var(--primary-2); }
+
+/* Possible cause row in the summary */
+.cause-val { display: inline-flex; align-items: center; gap: 6px; color: #8A5A00; font-weight: 700; }
+.cause-val svg { width: 18px; height: 18px; flex: 0 0 18px; }
+.cause-sub { display: block; margin-top: 2px; font-size: 13px; line-height: 18px; font-weight: 400; color: #707070; }
+.flag-kv .cause-row { grid-column: span 2; }
