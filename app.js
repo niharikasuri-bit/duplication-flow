@@ -764,7 +764,7 @@
         <p>We couldn’t find this beneficiary in the records. You can add them as a new beneficiary.</p>
       </div>`;
     }
-    return `${meta}<p class="search-meta" role="status">${plural(hits.length, "household")} found</p>
+    return `${meta}<p class="search-meta" role="status">${hits.length} ${hits.length === 1 ? "beneficiary" : "beneficiaries"} found</p>
       <ul class="hh-list">${hits.map(r => householdCard(r.h, { matched: r.matched, matchTag: r.fuzzy ? "Similar spelling" : "", q })).join("")}</ul>
       <p class="none-line">Not in this list? Register a new beneficiary.</p>`;
   }
