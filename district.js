@@ -134,11 +134,13 @@
 
   // ---------- Screens ----------
   function home() {
-    const n = pending().length;
+    const n = pending().length, done = reviewed().length, total = n + done;
     return {
       bar: "home",
       body: `<div class="card progress-card">
-          <p class="progress-title">${n} flag${n === 1 ? "" : "s"} to review</p>
+          <p class="progress-title">Flagged Duplicates</p>
+          <div class="progress-track" role="progressbar" aria-label="Flags reviewed" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${done}"><div class="progress-fill" style="width:${total ? Math.round(done / total * 100) : 0}%"></div></div>
+          <p class="progress-text"><span>${done} reviewed</span> · ${n} flag${n === 1 ? "" : "s"} to review</p>
           <p class="progress-text">Possible double vaccinations and duplicate households and people found after records sync in your district.</p>
         </div>
         <ul class="home-tiles">
@@ -149,15 +151,21 @@
     };
   }
 
+  // Why the flag was raised, in plain words (no worker names).
+  function whyFlagged(f) {
+    if (f.type === "delivery") return f.deliveries.some(d => d.failed) ? "Vaccinated twice this round, once after a failed sync" : "Two matched records were each vaccinated this round";
+    if (f.reason) return `Added as new despite a match: ${f.reason.charAt(0).toLowerCase()}${f.reason.slice(1)}`;
+    if (f.syncFailed) return "Created after a failed sync";
+    return f.source ? f.source.replace(/^Server match across teams$/, "Found by the server across teams") : "Found by the server after sync";
+  }
   function queueCards(list) {
     const q = state.q.trim().toLowerCase();
     const rows = list.filter(f => !q || f.id.toLowerCase().includes(q) || f.title.toLowerCase().includes(q) || f.area.toLowerCase().includes(q));
     if (!rows.length) return `<div class="dq-empty">${ICON.flag}<p>${state.tab === "Pending" ? "No flags waiting for review." : "No reviewed flags yet."}</p></div>`;
-    return `<ul class="dq-list">${rows.map(f => `<li><article class="dq-card ${f.status === "Confirmed" ? "acc-ok" : f.status === "Not a duplicate" ? "acc-none" : f.type === "delivery" ? "acc-alert" : ""}" aria-labelledby="t-${f.id}">
+    return `<ul class="dq-list">${rows.map(f => `<li><article class="dq-card ${f.status === "Confirmed" ? "acc-ok" : f.status === "Not a duplicate" ? "acc-none" : ""}" aria-labelledby="t-${f.id}">
         <p class="dq-time">${ICON.clock}${esc(f.raised)} · ${esc(f.area)}</p>
         <div class="dq-head"><h3 class="dq-id" id="t-${f.id}">${esc(f.id)}</h3>${f.status === "Open" ? tierPill(f.tier) : statusPill(f.status)}</div>
-        <div class="dq-info"><span class="dq-label">${esc(ISSUE[f.type])}</span><span class="dq-value">${esc(f.title)}</span></div>
-        <p class="dq-meta">${esc(f.collector)} · ${esc(f.team)}${f.type === "delivery" && f.deliveries.some(d => d.failed) ? ` · <span class="dq-warn">Vaccinated after a failed sync</span>` : ""}${f.syncFailed ? ` · <span class="dq-warn">Created after a failed sync</span>` : ""}</p>
+        <div class="dq-info"><span class="dq-label">${esc(ISSUE[f.type])}</span><span class="dq-value">${esc(f.title)}</span><span class="dq-why">${esc(whyFlagged(f))}</span></div>
         <button class="btn btn-primary dq-btn" data-action="open-flag" data-id="${esc(f.id)}">${f.status === "Open" ? "Review" : "View"}</button>
       </article></li>`).join("")}</ul>`;
   }
