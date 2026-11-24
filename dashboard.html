@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Duplication Dashboard – Duplication Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="supervisor.css?v=13" />
+</head>
+<body data-role="dashboard">
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">HCM</span><span>DIGIT HCM</span></div>
+    <div class="topbar-right">
+      <span>Solimbo</span>
+      <span>English</span>
+      <a class="role-switch" href="index.html">Switch Role</a>
+      <span class="avatar" aria-label="Dashboard viewer">D</span>
+      <span class="brand-digit">DIGIT</span>
+    </div>
+  </header>
+  <div class="shell">
+    <nav class="sidenav" aria-label="Dashboard">
+      <a href="#/dashboard" data-nav="dashboard" aria-label="Duplication dashboard" title="Duplication dashboard"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg></a>
+    </nav>
+    <div class="content">
+      <div class="subbar">
+        <button class="btn btn-secondary btn-sm" type="button" data-action="help">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M9.5 9.5a2.5 2.5 0 0 1 4.9.7c0 1.6-2.4 2.1-2.4 3.6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17" r="1.1" fill="currentColor"/></svg>Help
+        </button>
+      </div>
+      <main class="page" id="page" tabindex="-1"></main>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status" hidden></div>
+  <script src="supervisor.js?v=13"></script>
+</body>
+</html>
