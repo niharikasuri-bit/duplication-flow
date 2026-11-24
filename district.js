@@ -206,7 +206,7 @@
   // Why the flag might have happened: shown in the summary, under the reason.
   function possibleCause(f) {
     const failed = f.type === "delivery" ? f.deliveries.map((d, i) => d.failed ? i + 1 : null).filter(Boolean) : f.syncFailed ? [2] : [];
-    return failed.map(n => `<p class="sum-cause"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg><span>Possible cause: <b>Sync failed for record ${n}</b></span></p>`).join("");
+    return failed.map(n => `<div><dt>Possible cause</dt><dd class="kv-cause"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>Sync failed for record ${n}</dd></div>`).join("");
   }
   function syncNotice(f) {
     const items = f.type === "delivery"
@@ -215,11 +215,12 @@
     return items.map(([n, t]) => `<div class="sync-notice" role="note"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg><div><p class="sync-notice-title">Record ${n}: sync failed</p><p>${esc(t)}</p></div></div>`).join("");
   }
   // Header: label on the left, value on the right.
-  const flagHead = f => `<div class="card sum">
-      <div class="sum-top"><p class="sum-reason">${esc(ISSUE[f.type])}</p>${tierPill(f.tier)}</div>
-      ${possibleCause(f)}
-      ${f.reason ? `<p class="sum-wreason">Worker’s reason: ${esc(f.reason)}</p>` : ""}
-      <dl class="sum-meta">
+  const flagHead = f => `<div class="card dq-flaghead">
+      <dl class="kv-rows">
+        <div><dt>Reason</dt><dd class="kv-main">${esc(ISSUE[f.type])}</dd></div>
+        ${possibleCause(f)}
+        <div><dt>Match</dt><dd>${tierPill(f.tier)}</dd></div>
+        ${f.reason ? `<div><dt>Worker’s reason</dt><dd>${esc(f.reason)}</dd></div>` : ""}
         <div><dt>Flag ID</dt><dd>${esc(f.id)}</dd></div>
         ${f.type === "household" ? `<div><dt>Distance</dt><dd>${esc(f.distance)} m apart</dd></div>` : `<div><dt>Household</dt><dd>${esc(f.household)}</dd></div>`}
       </dl>

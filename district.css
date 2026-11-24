@@ -159,3 +159,13 @@
 .sum-meta dd { font-size: 13px; line-height: 18px; font-weight: 500; color: var(--text); }
 .card.sum { margin-top: 16px; }
 .card.sum .sum-reason { font-size: 18px; line-height: 22px; }
+
+/* Summary: label left, value right; reason first */
+.kv-rows > div { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid #ECECEC; }
+.kv-rows > div:first-child { padding-top: 0; }
+.kv-rows > div:last-child { border-bottom: 0; padding-bottom: 0; }
+.kv-rows dt { font-size: 14px; line-height: 19px; color: #505A5F; }
+.kv-rows dd { font-size: 14px; line-height: 19px; font-weight: 500; color: var(--text); text-align: right; }
+.kv-rows dd.kv-main { font-size: 16px; line-height: 20px; font-weight: 700; color: var(--primary-2); }
+.kv-rows dd.kv-cause { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: #8A5A00; }
+.kv-rows dd.kv-cause svg { width: 18px; height: 18px; flex: 0 0 18px; }
