@@ -578,7 +578,12 @@
             ${selectField({ id: "p-idtype", label: "ID type", value: p.idType, options: ID_TYPES, required: true })}
             <div id="p-idnumber-wrap" ${p.idType === "Not available" ? "hidden" : ""}>${textField({ id: "p-idnumber", label: "ID number", value: p.idNumber, required: true })}</div>
             ${dobAgeField(p)}
-            ${selectField({ id: "p-gender", label: "Gender", value: p.gender, options: ["Female", "Male"] })}
+            <fieldset class="field plain-fieldset" id="p-gender-group">
+              <legend class="field-label">Gender</legend>
+              <div class="secondary-container radios toggle">
+                ${["Female", "Male"].map(o => `<label class="toggle-opt"><input type="radio" name="p-gender" value="${o}" ${o === p.gender ? "checked" : ""}/><span>${o}</span></label>`).join("")}
+              </div>
+            </fieldset>
             ${textField({ id: "p-mobile", label: "Mobile number", value: p.mobile, type: "tel", inputmode: "tel" })}
           </div>
           ${state.compareOpen ? compareDialogHtml() : ""}
