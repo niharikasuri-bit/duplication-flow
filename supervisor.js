@@ -288,9 +288,8 @@
             <h2 class="card-title">${isHH ? "Households" : "Individuals"}</h2>
             <p class="card-sub">${isHH ? "" : `Household: ${esc(f.household)} · `}Signals matched: ${f.signals.map(esc).join(", ")}</p>
             ${recordPanels(rows, f.a, f.b)}
-            ${f.reason || f.searchTerm ? `<div class="rec-notes">
-              ${f.reason ? `<div><h3>Worker’s reason</h3><p>The worker added record B as a new person: “${esc(f.reason)}”.</p></div>` : ""}
-              ${f.searchTerm ? `<div><h3>Search before create</h3><p>The worker searched “${esc(f.searchTerm)}” before creating household B.</p></div>` : ""}
+            ${f.reason ? `<div class="rec-notes">
+              <div><h3>Worker’s reason</h3><p>The worker added record B as a new person: “${esc(f.reason)}”.</p></div>
             </div>` : ""}
             ${isHH ? `<h3 class="sub-title">People in both households</h3>
             <div class="pair-list">${f.pairs.map(p => `<div class="pair-row">
