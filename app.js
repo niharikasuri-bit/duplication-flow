@@ -23,7 +23,7 @@
   // ---------- Config ----------
   const ASSIGNED_AREA = "Solimbo";
   const NEARBY_M = 50;            // households compared at creation
-  const STORE_KEY = "duplication-flow-v3";
+  const STORE_KEY = "duplication-flow-v4";
 
   const SCREENS = {
     home:       { name: "Home", desc: "Check the data on this device before you start." },
@@ -92,7 +92,7 @@
   const ID_TYPES = ["National ID", "Birth certificate", "Not available"];
   const NEW_PERSON_REASONS = ["Twin or sibling", "Different person with a similar name", "Checked with the caregiver", "Other"];
   const NEW_HOUSEHOLD_REASONS = ["Different family with a similar name", "Checked with the household", "Household moved or split", "Other"];
-  const FLAG_SERVED_REASONS = ["Wrong child marked as vaccinated", "Child was not vaccinated", "Vaccinated twice this round", "Other"];
+  const FLAG_SERVED_REASONS = ["Wrong child marked as vaccinated", "Child was not vaccinated", "Other"];
   const HEAD_MIN_MONTHS = 18 * 12;   // household head must be 18 or older
   const CHECKLIST = [
     { id: "chk-drops", label: "Two drops administered" },

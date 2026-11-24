@@ -9,7 +9,7 @@
 (function () {
   "use strict";
 
-  const STORE_KEY = "duplication-supervisor-v3";
+  const STORE_KEY = "duplication-supervisor-v4";
   const TIER_RANK = { Definite: 3, Strong: 2, Low: 1 };
   const ROOT_CAUSES = ["Sync failed", "Spelling", "Info mismatch", "Area overlap", "Other"];
   const DELIVERY_CAUSES = ["Sync failed", "Area overlap", "Other"];
@@ -31,14 +31,6 @@
       child: { id: "IND-55340", name: "Isatu Conteh", gender: "Female", age: "1 year 4 months", dob: "02/07/2025" },
       delivery: { time: "Yesterday, 14:12", coords: "8.48530, -13.23011", worker: "A. Sesay (Team 1)", sync: "Failed. Last succeeded yesterday 07:40", failed: true },
       flaggedBy: "M. Kargbo (Team 1)"
-    },
-    {
-      id: "FLG-1037", type: "vaccination", status: "Open", area: "Makeni Road", team: "Team 4", collector: "K. Sesay", raised: "Yesterday, 15:05", source: "Raised by worker",
-      title: "Mohamed Kanu", household: "Sorie Kanu", reason: "Vaccinated twice this round",
-      note: "The caregiver showed a finger mark from an earlier visit this round.",
-      child: { id: "IND-54877", name: "Mohamed Kanu", gender: "Male", age: "4 years 1 month", dob: "20/10/2022" },
-      delivery: { time: "Yesterday, 14:50", coords: "8.48701, -13.22833", worker: "K. Sesay (Team 4)", sync: "Succeeded, yesterday 08:30" },
-      flaggedBy: "K. Sesay (Team 4)"
     },
     {
       id: "FLG-1034", type: "vaccination", status: "Open", area: "Lunsar", team: "Team 2", collector: "J. Koroma", raised: "Yesterday, 10:15", source: "Raised by worker",
@@ -314,7 +306,7 @@
     const done = f.status !== "Open";
     const causes = kind === "delivery" ? DELIVERY_CAUSES : ROOT_CAUSES;
     const choices = kind === "vaccination"
-      ? [["Confirmed", "Confirm flag", f.reason === "Vaccinated twice this round" ? "The child was vaccinated twice this round." : "The vaccination record is wrong. It is marked as wrong and the child shows not vaccinated."],
+      ? [["Confirmed", "Confirm flag", "The vaccination record is wrong. It is marked as wrong and the child shows not vaccinated."],
          ["Not a duplicate", "Record is correct", "The vaccination record stands."]]
       : kind === "delivery"
       ? [["Confirmed", "Confirm double delivery", "The child was vaccinated twice this round."],
@@ -590,7 +582,7 @@
       f.status = decision; f.rootCause = cause; f.comment = document.getElementById("comment").value; save();
       location.hash = "#/flags";
       toast(f.type === "vaccination"
-        ? { Confirmed: `${f.id} confirmed. ${f.reason === "Vaccinated twice this round" ? "Recorded as a double vaccination." : "The vaccination record is marked as wrong."}`, "Not a duplicate": `${f.id} closed. The vaccination record stands.` }[decision]
+        ? { Confirmed: `${f.id} confirmed. The vaccination record is marked as wrong.`, "Not a duplicate": `${f.id} closed. The vaccination record stands.` }[decision]
         : { Confirmed: f.type === "delivery" ? `${f.id} confirmed as a double delivery.` : `${f.id} confirmed as a duplicate. The records are linked.`, "Not a duplicate": `${f.id} marked not a duplicate. It won’t be raised again.` }[decision]);
     }
   });
