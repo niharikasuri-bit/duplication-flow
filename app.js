@@ -23,7 +23,7 @@
   // ---------- Config ----------
   const ASSIGNED_AREA = "Solimbo";
   const NEARBY_M = 50;            // households compared at creation
-  const STORE_KEY = "duplication-flow-v4";
+  const STORE_KEY = "duplication-flow-v5";
 
   const SCREENS = {
     home:       { name: "Home", desc: "Check the data on this device before you start." },
@@ -410,8 +410,7 @@
     const served = isServed(p);
     if (!served && p.status === "pending") chips.push(`<span class="status-chip chip-pending">${ICON.hourglass}Visit Pending</span>`);
     if (!served && p.status === "not") chips.push(`<span class="status-chip chip-info">Not Administered</span>`);
-    if (served && !p.flagServed) chips.push(`<span class="status-chip chip-ok">${ICON.tick}Vaccinated</span>`);
-    if (p.flagServed) chips.push(`<span class="status-chip chip-warn">${ICON.warn}Flagged for supervisor</span>`);
+    if (served) chips.push(`<span class="status-chip chip-ok">${ICON.tick}Vaccinated</span>`);
     return chips.length ? `<div class="chip-row">${chips.join("")}</div>` : "";
   }
 
@@ -555,7 +554,7 @@
         const served = isServed(p);
         const btn = !isChild(p) ? ""
           : served
-            ? `${p.flagServed ? "" : `<button class="btn btn-secondary card-btn" data-action="flag-served" data-id="${p.id}">Flag for Supervisor</button>`}`
+            ? ""
           : p.status === "not"
             ? `<button class="btn btn-secondary card-btn" data-action="unable" data-id="${p.id}">Unable to Vaccinate</button>`
             : `<button class="btn btn-primary card-btn" data-action="take-action" data-id="${p.id}">Take Action</button>`;

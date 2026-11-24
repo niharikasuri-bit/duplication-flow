@@ -9,7 +9,7 @@
 (function () {
   "use strict";
 
-  const STORE_KEY = "duplication-supervisor-v5";
+  const STORE_KEY = "duplication-supervisor-v6";
   const TIER_RANK = { Definite: 3, Strong: 2, Low: 1 };
   const ROOT_CAUSES = ["Sync failed", "Spelling", "Info mismatch", "Area overlap", "Other"];
   const DELIVERY_CAUSES = ["Sync failed", "Area overlap", "Other"];
@@ -17,52 +17,11 @@
   // ---------- Demo flags ----------
   const SEED_FLAGS = () => [
     {
-      id: "FLG-1043", type: "vaccination", status: "Open", area: "Kanu", team: "Team 3", collector: "S. Turay", raised: "Today, 11:20", source: "Raised by worker",
-      title: "Aminata Turay", household: "Abu Turay", reason: "Wrong child marked as vaccinated",
-      note: "Vaccination was recorded on Aminata, but her brother Alusine was the one vaccinated.",
-      child: { id: "IND-56012", name: "Aminata Turay", gender: "Female", age: "3 years 2 months", dob: "14/09/2023" },
-      delivery: { time: "Today, 09:48", coords: "8.49002, -13.22561", worker: "S. Turay (Team 3)", sync: "Succeeded, today 08:15" },
-      flaggedBy: "S. Turay (Team 3)"
-    },
-    {
-      id: "FLG-1041", type: "vaccination", status: "Open", area: "Solimbo", team: "Team 1", collector: "M. Kargbo", raised: "Today, 09:40", source: "Raised by worker",
-      title: "Isatu Conteh", household: "Foday Conteh", reason: "Child was not vaccinated",
-      note: "The caregiver says Isatu was not home on that day.",
-      child: { id: "IND-55340", name: "Isatu Conteh", gender: "Female", age: "1 year 4 months", dob: "02/07/2025" },
-      delivery: { time: "Yesterday, 14:12", coords: "8.48530, -13.23011", worker: "A. Sesay (Team 1)", sync: "Failed. Last succeeded yesterday 07:40", failed: true },
-      flaggedBy: "M. Kargbo (Team 1)"
-    },
-    {
-      id: "FLG-1034", type: "vaccination", status: "Open", area: "Lunsar", team: "Team 2", collector: "J. Koroma", raised: "Yesterday, 10:15", source: "Raised by worker",
-      title: "Fatmata Sesay", household: "Ibrahim Sesay", reason: "Other",
-      note: "The date of the vaccination looks wrong. The caregiver says it was last week.",
-      child: { id: "IND-53902", name: "Fatmata Sesay", gender: "Female", age: "2 years 8 months", dob: "11/03/2024" },
-      delivery: { time: "Yesterday, 09:02", coords: "8.68210, -12.53101", worker: "J. Koroma (Team 2)", sync: "Succeeded, yesterday 07:58" },
-      flaggedBy: "J. Koroma (Team 2)"
-    },
-    {
       id: "FLG-1033", type: "individual", tier: "Definite", status: "Open", area: "Lunsar", team: "Team 2", collector: "J. Koroma", raised: "Yesterday, 08:55", source: "Server match. The device had no match to show", syncFailed: true,
       title: "Alusine Koroma and Alusine Koroma", household: "Santigie Koroma",
       signals: ["Same ID number", "Same name", "Same age", "Same gender"],
       a: { id: "IND-52210", name: "Alusine Koroma", gender: "Male", age: "2 years 3 months", dob: "05/08/2024", mobile: "–", idNo: "BC-80431", by: "M. Kargbo (Team 1)", at: "10 Nov 2026", sync: "Succeeded" },
       b: { id: "IND-55910", name: "Alusine Koroma", gender: "Male", age: "2 years 3 months", dob: "05/08/2024", mobile: "–", idNo: "BC-80431", by: "J. Koroma (Team 2)", at: "Yesterday, 08:50", sync: "Failed. Last succeeded 2 days ago" }
-    },
-    {
-      id: "FLG-1042", type: "delivery", tier: "Definite", status: "Open", area: "Solimbo", team: "Team 2", collector: "J. Koroma", raised: "Today, 10:05", source: "Server: two deliveries on one record",
-      title: "Aissatou Sow", household: "Ousmane Sow", age: "3 years 5 months", gender: "Female", round: 2,
-      deliveries: [
-        { time: "Yesterday, 15:05", coords: "8.48311, -13.23102", worker: "M. Kargbo (Team 1)", sync: "Succeeded, yesterday 08:02" },
-        { time: "Today, 10:02", coords: "8.48309, -13.23098", worker: "J. Koroma (Team 2)", sync: "Failed. Last succeeded yesterday 07:40", failed: true }
-      ]
-    },
-    {
-      id: "FLG-1040", type: "delivery", tier: "Strong", status: "Open", area: "Kanu", team: "Team 3", collector: "F. Bangura", raised: "Today, 09:12", source: "Server: deliveries on two matched records",
-      title: "Hawa Bah and Awa Bah", household: "Muhammad Bah", age: "2 years 6 months", gender: "Female", round: 2,
-      note: "Two records the server matched as a Strong pair each received a vaccination this round.",
-      deliveries: [
-        { time: "Today, 08:40", coords: "8.49120, -13.22410", worker: "F. Bangura (Team 3)", sync: "Succeeded, today 07:55", person: "Hawa Bah" },
-        { time: "Today, 09:05", coords: "8.49118, -13.22414", worker: "S. Turay (Team 3)", sync: "Succeeded, today 08:10", person: "Awa Bah" }
-      ]
     },
     {
       id: "FLG-1039", type: "household", tier: "Strong", status: "Open", area: "Solimbo", team: "Team 2", collector: "J. Koroma", raised: "Today, 08:47", source: "Server match. The device had no match to show",
@@ -205,12 +164,11 @@
     const all = store.flags, open = all.filter(f => f.status === "Open");
     const n = filteredFlags().length;
     return `${crumbs([["Home", "index.html"], ["Flag Queue"]])}
-      ${head("Flag Queue", "Possible duplicates and double deliveries found after records sync, and vaccination records flagged by workers, are here. Delivery alerts come first, then worker flags, then flags by match strength. Open a flag to check the records and decide.")}
+      ${head("Flag Queue", "Possible duplicate households and people found after records sync are here, strongest match first. Open a flag to compare the records and decide.")}
       ${stats([
         [open.length, "Flags to review"],
-        [open.filter(f => f.type === "delivery").length, "Possible double vaccinations", true],
-        [open.filter(f => f.type === "household" || f.type === "individual").length, "Possible duplicates"],
-        [open.filter(f => f.type === "vaccination").length, "Vaccination records flagged by workers"]
+        [open.filter(f => f.type === "household").length, "Possible duplicate households"],
+        [open.filter(f => f.type === "individual").length, "Possible duplicate people"]
       ])}
       <div class="card">
         <div class="filters">

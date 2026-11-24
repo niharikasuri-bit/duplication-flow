@@ -1,0 +1,78 @@
+/* District Supervisor mobile app: patterns borrowed from the inventory app
+   (sliding tabs, list cards with accent strip and time strip, info block, A/B boxes, success panel).
+   Loaded after app.css, which supplies the phone shell, buttons, fields and tokens. */
+.req { color: var(--error); margin-left: 2px; }
+
+/* Sliding Pending / Reviewed toggle */
+.dq-tabs { margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr; padding: 2px; height: 36px; border: 1px solid #787878; border-radius: 12px; background: var(--paper-2); }
+.dq-tab { border-radius: 10px; font-size: 16px; line-height: 20px; font-weight: 700; color: #787878; }
+.dq-tab[aria-selected="true"] { background: var(--primary-1); color: #fff; }
+
+/* Search */
+.dq-search { margin-top: 12px; height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: var(--paper); border-radius: 8px; box-shadow: 0 2px 2px rgba(0,0,0,.15); }
+.dq-search svg { width: 20px; height: 20px; color: #787878; flex: 0 0 20px; }
+.dq-search-input { flex: 1; min-width: 0; border: 0; outline: 0; font: inherit; font-size: 16px; color: var(--text); background: transparent; }
+.dq-search-input::placeholder { color: #B1B4B6; }
+
+/* List cards */
+.dq-list { list-style: none; margin-top: 16px; display: flex; flex-direction: column; gap: 16px; }
+.dq-card { position: relative; overflow: hidden; background: var(--paper); border: 1px solid #E5E5E5; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.10); padding: 0 16px 16px; display: flex; flex-direction: column; gap: 12px; }
+.dq-card.acc-ok::before, .dq-card.acc-none::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; }
+.dq-card.acc-ok::before { background: var(--success); }
+.dq-card.acc-none::before { background: #B1B4B6; }
+.dq-time { margin: 0 -16px; padding: 8px 16px; background: var(--paper-2); display: flex; align-items: center; gap: 6px; font-size: 13px; line-height: 18px; color: #787878; }
+.dq-time svg { width: 16px; height: 16px; }
+.dq-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.dq-id { font-size: 17px; line-height: 22px; font-weight: 700; color: var(--primary-2); }
+.dq-info { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; background: #EDF6FF; border: 1px solid #D3E6F8; border-radius: 8px; }
+.dq-label { font-size: 11px; line-height: 14px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; color: #505A5F; }
+.dq-value { font-size: 14px; line-height: 19px; font-weight: 700; color: var(--primary-2); }
+.dq-meta { font-size: 13px; line-height: 18px; color: #505A5F; }
+.dq-warn { color: var(--error); }
+.dq-btn { font-size: 16px; font-weight: 500; }
+.dq-empty { margin-top: 48px; display: flex; flex-direction: column; align-items: center; gap: 8px; color: #B1B4B6; font-size: 14px; }
+.dq-empty svg { width: 40px; height: 40px; }
+
+/* Pills */
+.dq-pill { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 10px; border-radius: 999px; border: 1px solid currentColor; font-size: 12px; line-height: 16px; font-weight: 500; white-space: nowrap; }
+.dq-pill svg { width: 14px; height: 14px; }
+.tier-definite { color: var(--error); background: #FFF5F4; }
+.tier-strong { color: #8A5A00; background: #FFF4D6; }
+.tier-low { color: var(--success); background: #F1FFF8; }
+.st-ok { color: var(--success); background: #F1FFF8; }
+.st-none { color: #505A5F; background: #F2F2F2; border-color: var(--border); }
+
+/* Review */
+.dq-summary { margin-top: 16px; }
+.dq-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+.dq-fields dt { font-size: 12px; line-height: 16px; color: #505A5F; }
+.dq-fields dd { margin-top: 2px; font-size: 16px; line-height: 20px; font-weight: 700; color: #0B0C0C; display: flex; align-items: center; gap: 2px; }
+.dq-fields dd svg { width: 16px; height: 16px; color: #787878; }
+.dq-sync { margin-top: 12px; font-size: 14px; line-height: 19px; color: var(--error); }
+.dq-reason { margin-top: 12px; }
+.dq-section { margin-top: 24px; font-size: 18px; line-height: 22px; font-weight: 700; color: var(--primary-2); }
+.dq-legend { list-style: none; margin-top: 8px; display: flex; gap: 14px; font-size: 12px; line-height: 16px; color: var(--text); }
+.dq-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.dq-legend li::before { content: ""; width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--k-c); background: var(--k-bg); }
+.k-same { --k-c: var(--success); --k-bg: #F1FFF8; }
+.k-similar { --k-c: #B57F00; --k-bg: #FFF4D6; }
+.k-diff { --k-c: var(--error); --k-bg: #FFF5F4; }
+.dq-compare { margin-top: 8px; }
+.dq-ab { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; line-height: 16px; font-weight: 700; color: var(--primary-2); }
+.cmp-row { padding: 10px 0; border-bottom: 1px solid #ECECEC; }
+.cmp-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.cmp-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; line-height: 16px; color: #505A5F; }
+.cmp-kind { font-size: 11px; font-weight: 700; color: var(--k-c); }
+.cmp-pair { margin-top: 6px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.cmp-box { position: relative; min-height: 40px; padding: 18px 10px 8px; border-radius: 8px; background: #F5F5F5; border: 1px solid #E4E4E4; font-size: 14px; line-height: 19px; color: var(--text); overflow-wrap: anywhere; }
+.cmp-box.k-same, .cmp-box.k-similar, .cmp-box.k-diff { background: var(--k-bg); border-color: var(--k-c); font-weight: 700; }
+.cmp-side { position: absolute; top: 4px; left: 10px; font-size: 10px; line-height: 12px; font-weight: 700; color: #787878; }
+.dq-sub { margin-top: 12px; padding: 12px 16px 16px; background: var(--paper); border: 1px solid #E4E4E4; border-radius: 12px; }
+.dq-subtitle { font-size: 16px; line-height: 20px; font-weight: 700; color: var(--text); }
+.dq-done { margin-top: 16px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; font-size: 14px; line-height: 19px; }
+
+/* Decision */
+.dq-ctx { margin: 16px 0 12px; padding: 8px 12px; border-radius: 6px; background: #F2F2F2; font-size: 16px; line-height: 20px; font-weight: 700; color: #505A5F; }
+.dq-ctx.ctx-ok { background: #F1FFF8; color: var(--success); }
+.dq-comment { margin-top: 20px; }
+.dq-comment textarea { font-family: inherit; font-size: 16px; height: auto; min-height: 88px; padding: 10px 12px; resize: vertical; }
