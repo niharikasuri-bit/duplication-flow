@@ -729,7 +729,7 @@
   function searchResultsHtml() {
     const q = state.query.trim();
     const hits = searchHouseholds(q);
-    const meta = !store.synced ? `<p class="search-meta search-failed">${ICON.stop}Sync failed. Last succeeded ${esc(LAST_GOOD_BEFORE.toLowerCase())}. Search may miss households.</p>` : "";
+    const meta = "";   // sync failure is shown once, in the banner at the top
     if (!hits) return meta;
     if (!hits.length) {
       return `${meta}<div class="empty" role="status">
