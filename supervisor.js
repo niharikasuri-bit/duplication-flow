@@ -126,7 +126,9 @@
   const uniq = arr => [...new Set(arr)].sort();
   const tag = (text, kind) => `<span class="tag tag-${kind}">${esc(text)}</span>`;
   const tierTag = t => tag(t, { Definite: "error", Strong: "warning", Low: "success" }[t]);
-  const typeTag = t => (t === "delivery" ? tag("Delivery alert", "error") : tag(t === "household" ? "Household" : "Individual", "neutral"));
+  // Plain-language issue labels (what the supervisor is being asked to check).
+  const ISSUE = { delivery: "Possible double vaccination", household: "Possible duplicate household", individual: "Possible duplicate person" };
+  const typeTag = t => tag(ISSUE[t], t === "delivery" ? "error" : "neutral");
   const statusTag = s => tag(s, { Open: "info", Confirmed: "success", "Not a duplicate": "neutral", Suggested: "info", Approved: "success", Rejected: "neutral" }[s] || "neutral");
   const crumbs = items => `<nav class="crumbs" aria-label="Breadcrumb">${items.map((it, i) => (i < items.length - 1 ? `<a href="${it[1]}">${esc(it[0])}</a><span aria-hidden="true">/</span>` : `<span aria-current="page">${esc(it[0])}</span>`)).join("")}</nav>`;
   const head = (title, desc, actions = "") => `<div class="page-head"><div><h1 class="page-title">${esc(title)}</h1><p class="page-desc">${esc(desc)}</p></div>${actions ? `<div class="head-actions">${actions}</div>` : ""}</div>`;
@@ -194,7 +196,7 @@
         <div class="table-bar"><span id="flag-count">${n} flag${n === 1 ? "" : "s"}</span></div>
         <div class="table-wrap">
           <table class="data">
-            <thead><tr><th>Flag ID</th><th>Type</th><th>Match</th><th>Records</th><th>Area</th><th>Team</th><th>Collector</th><th>Status</th><th><span class="sr-only">Action</span></th></tr></thead>
+            <thead><tr><th>Flag ID</th><th>Issue</th><th>Match</th><th>Records</th><th>Area</th><th>Team</th><th>Collector</th><th>Status</th><th><span class="sr-only">Action</span></th></tr></thead>
             <tbody id="flag-rows">${queueRows()}</tbody>
           </table>
         </div>
