@@ -422,10 +422,13 @@
 
   function syncCard() {
     const s = store.sync, ok = syncOk();
-    const row = (l, good) => `<div class="pair sync-row ${good ? "" : "is-failed"}"><dt>${esc(l)}</dt><dd>
-        <span class="sync-state">${ICON[good ? "ok" : "stop"]}${good ? "Succeeded" : "Failed"}</span>
-        <span class="sync-time">${esc(good ? LAST_OK : `Last succeeded ${LAST_GOOD_BEFORE.toLowerCase()}`)}</span></dd></div>`;
-    const stat = (l, v) => `<div class="pair"><dt>${esc(l)}</dt><dd>${esc(v)}</dd></div>`;
+    // Compact: one chip per sync type (green tick or red cross), then one summary line.
+    const chip = (l, good) => `<li class="sync-chip ${good ? "" : "is-failed"}">${ICON[good ? "ok" : "stop"]}<span>${esc(l)}</span><span class="sr-only">${good ? "succeeded" : "failed"}</span></li>`;
+    const summary = [
+      ok ? `Synced ${LAST_OK.toLowerCase()}` : `Last succeeded ${LAST_GOOD_BEFORE.toLowerCase()}`,
+      `${s.reg ? "1,248" : "1,236"} records`,
+      `${store.pending} waiting to sync`
+    ];
     let msg = "", btn = "";
     if (!ok) {
       msg = notice("error", store.continued
@@ -442,15 +445,12 @@
         <h2 class="card-title" id="sync-title">Data on this device</h2>
         <span class="pill pill-${ok ? "ok" : "error"}">${ok ? "Sync succeeded" : "Sync failed"}</span>
       </div>
-      <dl class="pairs sync-rows">
-        ${row("Registrations", s.reg)}
-        ${row("Vaccination status", s.status)}
-        ${row("Flags", s.flags)}
-      </dl>
-      <dl class="pairs sync-rows sync-stats">
-        ${stat("Records on device", s.reg ? "1,248" : "1,236")}
-        ${stat("Records waiting to sync", String(store.pending))}
-      </dl>
+      <ul class="sync-chips" aria-label="Sync result per type">
+        ${chip("Registrations", s.reg)}
+        ${chip("Vaccinations", s.status)}
+        ${chip("Flags", s.flags)}
+      </ul>
+      <p class="sync-summary">${summary.map(esc).join('<span aria-hidden="true"> · </span>')}</p>
       ${msg}
       ${btn ? `<div class="sync-actions">${btn}</div>` : ""}
     </section>`;
