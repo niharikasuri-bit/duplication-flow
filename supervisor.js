@@ -226,16 +226,26 @@
 
   // ---------- S2 Side by side review ----------
   // Two record containers side by side inside the main container (DIGIT secondary containers).
+  // Each compared field is highlighted in both records: same (green), similar (amber) or different (red).
+  // rows: [label, valueA, valueB, kind] where kind is false (not compared), "similar", or omitted (same/different by value).
+  const MATCH_LABEL = { same: "Same", similar: "Similar", diff: "Different" };
+  function matchKind(va, vb, kind) {
+    if (kind === false) return "";
+    if (String(va) === "–" && String(vb) === "–") return "";
+    if (String(va) === String(vb)) return "same";
+    return kind === "similar" ? "similar" : "diff";
+  }
   function recordPanels(rows, a, b) {
-    const panel = (side, rec, other) => `<section class="rec" aria-labelledby="rec-${side}">
+    const panel = (side, rec) => `<section class="rec" aria-labelledby="rec-${side}">
         <header class="rec-head"><h3 id="rec-${side}">Record ${side}</h3><span class="rec-id">${esc(rec.id)}</span></header>
-        <dl class="rec-rows">${rows.map(([l, va, vb, check = true]) => {
-          const v = side === "A" ? va : vb, d = side === "B" && check && String(va) !== String(vb);
+        <dl class="rec-rows">${rows.map(([l, va, vb, kind]) => {
+          const v = side === "A" ? va : vb, k = matchKind(String(va).split(" · ")[0], String(vb).split(" · ")[0], kind);
           const val = esc(v).replace(/ · (.+)$/, '<span class="rec-sub">$1</span>');
-          return `<div class="${d ? "is-diff" : ""}"><dt>${esc(l)}</dt><dd>${val}${d ? '<span class="sr-only"> (different from record A)</span>' : ""}</dd></div>`;
+          return `<div class="${k ? `m-${k}` : ""}"><dt>${esc(l)}</dt><dd>${val}${k ? `<span class="sr-only"> (${MATCH_LABEL[k].toLowerCase()})</span>` : ""}</dd></div>`;
         }).join("")}</dl>
       </section>`;
-    return `<div class="rec-pair">${panel("A", a)}${panel("B", b)}</div>`;
+    return `<ul class="m-legend" aria-label="Highlight key"><li class="m-same">Same</li><li class="m-similar">Similar</li><li class="m-diff">Different</li></ul>
+      <div class="rec-pair">${panel("A", a)}${panel("B", b)}</div>`;
   }
   function cmpTable(rows, aTitle, bTitle) {
     return `<table class="cmp">
@@ -275,10 +285,10 @@
   function viewReview(f) {
     const isHH = f.type === "household";
     const rows = isHH
-      ? [["Household head", f.a.head, f.b.head], ["Household coordinates", f.a.coords, `${f.b.coords} · ${f.distance} m from A`], ["Number of members", f.a.members, f.b.members],
+      ? [["Household head", f.a.head, f.b.head, "similar"], ["Household coordinates", f.a.coords, `${f.b.coords} · ${f.distance} m from A`, "similar"], ["Number of members", f.a.members, f.b.members],
          ["Created by", f.a.by, f.b.by, false], ["Created", f.a.at, f.b.at, false], ["Sync at creation", f.a.sync, f.b.sync, false]]
-      : [["Full name", f.a.name, f.b.name], ["Gender", f.a.gender, f.b.gender], ["Age", f.a.age, f.b.age], ["Date of birth", f.a.dob, f.b.dob],
-         ["Mobile number", f.a.mobile, f.b.mobile], ["ID number", f.a.idNo, f.b.idNo], ["Created by", f.a.by, f.b.by, false], ["Created", f.a.at, f.b.at, false], ["Sync at creation", f.a.sync, f.b.sync, false]];
+      : [["Full name", f.a.name, f.b.name, "similar"], ["Gender", f.a.gender, f.b.gender], ["Age", f.a.age, f.b.age, "similar"], ["Date of birth", f.a.dob, f.b.dob, "similar"],
+         ["ID number", f.a.idNo, f.b.idNo], ["Created by", f.a.by, f.b.by, false], ["Created", f.a.at, f.b.at, false], ["Sync at creation", f.a.sync, f.b.sync, false]];
     return `${crumbs([["Home", "index.html"], ["Flag Queue", "#/flags"], [f.id]])}
       ${head("Review Possible Duplicate", isHH ? "Two households close to each other may be the same household. Compare the households and the people in them, then decide." : "Two people in the same household may be the same person. Compare the records, then decide.")}
       <div class="signals">${typeTag(f.type)}${tierTag(f.tier)}${f.syncFailed ? tag("Created after a failed sync", "warning") : ""}</div>

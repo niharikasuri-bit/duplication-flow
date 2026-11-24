@@ -120,8 +120,14 @@ table.data tr.is-alert td:first-child { box-shadow: inset 3px 0 0 var(--error); 
 .rec-rows > div:last-child { border-bottom: 0; }
 .rec-rows dt { color: var(--text-2); }
 .rec-rows dd { color: var(--text); word-break: break-word; }
-.rec-rows > div.is-diff { background: var(--warning-bg); border-radius: 4px; }
-.rec-rows > div.is-diff dd { font-weight: 700; }
+.rec-rows > div[class^="m-"] { border-radius: 4px; box-shadow: inset 3px 0 0 var(--m-c); background: var(--m-bg); }
+.rec-rows > div[class^="m-"] dd { font-weight: 700; }
+.m-same { --m-c: var(--success); --m-bg: var(--success-bg); }
+.m-similar { --m-c: #C58A00; --m-bg: var(--warning-bg); }
+.m-diff { --m-c: var(--error); --m-bg: var(--error-bg); }
+.m-legend { list-style: none; margin-top: 12px; display: flex; gap: 16px; font-size: 12px; line-height: 16px; color: var(--text); }
+.m-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.m-legend li::before { content: ""; width: 12px; height: 12px; border-radius: 2px; background: var(--m-bg); box-shadow: inset 3px 0 0 var(--m-c); border: 1px solid var(--m-c); }
 .rec-sub { display: block; margin-top: 2px; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--warning); }
 .sub-title { margin-top: 24px; font-size: 16px; line-height: 18px; font-weight: 700; color: var(--primary-2); }
 .pair-list { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
