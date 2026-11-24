@@ -300,3 +300,4 @@ table.data tr.is-alert td:first-child { box-shadow: inset 3px 0 0 var(--error); 
 
 .flag-kv dd.kv-cause { display: inline-flex; align-items: center; gap: 6px; color: #8A5A00; }
 .flag-kv dd.kv-cause svg { width: 18px; height: 18px; flex: 0 0 18px; }
+.flag-kv dd.kv-cause svg { display: none; }
