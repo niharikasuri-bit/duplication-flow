@@ -31,8 +31,7 @@
     household:  { name: "Household Details", desc: "Add the household head and capture the household location. Nearby households are checked so the same household is not registered twice." },
     overview:   { name: "Household Overview", desc: "See everyone in this household, add members and record vaccinations." },
     individual: { name: "Individual Details", desc: "Add the person’s details. They are compared with the people already in this household." },
-    compare:    { name: "Possible Match", desc: "Compare the person you’re adding with the person already registered, then choose whether they are the same person." },
-    matches:    { name: "Possible Matches", desc: "More than one person in this household looks like the person you’re adding. Compare each one." },
+    matches:    { name: "Existing Matches", desc: "More than one person in this household looks like the person you’re adding. Compare each one." },
     reason:     { name: "Add as New Person", desc: "Tell us why this is a different person. Your supervisor sees this reason." },
     check:      { name: "Vaccination Check", desc: "Check whether this child was already vaccinated this round before you vaccinate." },
     checklist:  { name: "Vaccination Checklist", desc: "Confirm the vaccination by completing the required checklist." },
@@ -140,6 +139,7 @@
     person: blankPerson(),
     matches: [],              // [{ member, tier, same[], diff[] }]
     compareIdx: 0,
+    compareOpen: false,       // W7 alert open over Individual Details or the matches list
     reason: { why: "", supervisor: false },
     memberId: null,
     errors: {}
@@ -571,63 +571,37 @@
             ${dobAgeField(p)}
             ${selectField({ id: "p-gender", label: "Gender", value: p.gender, options: ["Female", "Male"] })}
             ${textField({ id: "p-mobile", label: "Mobile number", value: p.mobile, type: "tel", inputmode: "tel" })}
-          </div>`,
+          </div>
+          ${state.compareOpen ? compareDialogHtml() : ""}
+          ${state.matches.length ? quickReasonHtml() : ""}`,
         footer: `<button class="btn btn-primary" data-action="person-continue">Continue</button>`
       };
     },
 
-    // W8
+    // W8: existing "Existing matches" list, opened straight away (no "N matches found" step).
     matches() {
-      const item = (m, i) => {
-        return `<li><article class="match-card" aria-labelledby="mc-${i}">
-          <h3 class="member-name" id="mc-${i}">${esc(m.member.name)}</h3>
-          <p class="member-sub"><span>${esc(m.member.gender || "Gender not recorded")}</span><span class="sep" aria-hidden="true"></span><span>${esc(ageLabel(m.member.age))}</span></p>
-          <p class="reasons-line">${esc([...m.same, ...m.diff].join(", "))}</p>
-          ${m.member.flag ? `<div class="chip-row"><span class="status-chip chip-warn">${ICON.warn}Needs supervisor check</span></div>` : ""}
-          <button class="btn btn-secondary card-btn" data-action="open-compare" data-i="${i}" aria-describedby="mc-${i}">Compare</button>
+      const item = (m, i) => `<li><article class="xm-card" aria-labelledby="xm-${i}">
+          <div class="xm-head">
+            <span class="xm-id" id="xm-${i}">ID ${esc(regId(m.member))}</span>
+          </div>
+          <ul class="xm-reasons" aria-label="Why this may be the same person">${m.same.map(r => `<li>${esc(r)}</li>`).join("")}${m.diff.map(r => `<li class="is-diff">${esc(r)}</li>`).join("")}</ul>
+          <dl class="xm-grid">
+            <div><dt>Full name</dt><dd>${esc(m.member.name)}</dd></div>
+            <div><dt>Age</dt><dd>${esc(ageLabel(m.member.age))}</dd></div>
+            <div><dt>Gender</dt><dd>${esc(m.member.gender || "–")}</dd></div>
+          </dl>
+          <div class="xm-actions">
+            <button class="btn btn-teal" data-action="same-person" data-i="${i}" aria-describedby="xm-${i}">Use Matched Registration</button>
+            <button class="btn-link xm-compare" data-action="open-compare" data-i="${i}" aria-describedby="xm-${i}">Compare Details</button>
+          </div>
         </article></li>`;
-      };
       return {
-        tag: ASSIGNED_AREA,
-        body: `${title("Possible Matches")}
-          <p class="page-desc">${plural(state.matches.length, "person")} in this household look like ${esc(state.person.name.trim())}.</p>
-          <ul class="match-list">${state.matches.map(item).join("")}</ul>`,
-        footer: `<button class="btn btn-secondary" data-action="new-person">${ICON.personAdd}Add as New Person</button>`
-      };
-    },
-
-    // W7
-    compare() {
-      const m = state.matches[state.compareIdx], e = m.member, p = state.person;
-      const newAge = personMonths(p);
-      const rows = [
-        ["Name", e.name, p.name.trim(), nameSim(e.name, p.name) < 0.99],
-        ["Gender", e.gender || "–", p.gender || "–", !!(e.gender && p.gender && e.gender !== p.gender)],
-        ["Age", ageLabel(e.age), ageLabel(newAge), e.age !== newAge],
-        ["Mobile number", e.mobile || "–", p.mobile || "–", !!(e.mobile && p.mobile && e.mobile !== p.mobile.replace(/\D/g, ""))],
-        ["ID number", e.idNumber || "–", p.idType === "Not available" ? "–" : p.idNumber || "–", !!(e.idNumber && p.idNumber && e.idNumber !== p.idNumber)]
-      ];
-      const low = m.tier === "Low";
-      return {
-        tag: ASSIGNED_AREA,
-        body: `${title("Possible Match")}
-          <div class="card">
-            <p class="match-lead"><b>${esc(e.name)}</b> is already registered in this household.</p>
-            <ul class="reason-list">
-              ${m.same.map(r => `<li class="r-same">${ICON.ok}<span>${esc(r)}</span></li>`).join("")}
-              ${m.diff.map(r => `<li class="r-diff">${ICON.info}<span>${esc(r)}</span></li>`).join("")}
-            </ul>
-          </div>
-          <div class="card compare-card">
-            <table class="compare">
-              <caption class="sr-only">Already registered compared with this registration</caption>
-              <thead><tr><th scope="col"><span class="sr-only">Detail</span></th><th scope="col">Already registered</th><th scope="col">This registration</th></tr></thead>
-              <tbody>${rows.map(([l, a, b, d]) => `<tr class="${d ? "is-diff" : ""}"><th scope="row">${esc(l)}</th><td>${esc(a)}</td><td>${esc(b)}${d ? '<span class="sr-only"> (different)</span>' : ""}</td></tr>`).join("")}</tbody>
-            </table>
-          </div>
-          ${low ? quickReasonHtml() : ""}`,
-        footer: `<button class="btn btn-primary" data-action="same-person">Same Person</button>
-          <button class="btn btn-secondary" data-action="${low ? "open-quick-reason" : "new-person"}">${ICON.personAdd}Add as New Person</button>`
+        body: `<h1 class="xm-title" id="page-title" tabindex="-1">Existing matches (${state.matches.length})</h1>
+          <p class="xm-desc">Select the record that matches the person you are registering.</p>
+          <ul class="xm-list">${state.matches.map(item).join("")}</ul>
+          ${state.compareOpen ? compareDialogHtml() : ""}
+          ${quickReasonHtml()}`,
+        footer: `<button class="btn btn-grey" data-action="continue-current">Continue Current Registration</button>`
       };
     },
 
@@ -716,6 +690,47 @@
       };
     }
   };
+
+  // ---------- W7 Possible Match Found (existing alert component) ----------
+  const regId = m => `REG-${100000 + (parseInt(String(m.id).replace(/\D/g, "").slice(-5), 10) || 0)}`;
+  function compareDialogHtml() {
+    const m = state.matches[state.compareIdx], e = m.member, p = state.person;
+    const newAge = personMonths(p);
+    const rows = [
+      ["Full Name", e.name, p.name.trim(), nameSim(e.name, p.name) < 0.99],
+      ["Age", ageLabel(e.age), ageLabel(newAge), e.age !== newAge],
+      ["Gender", e.gender || "–", p.gender || "–", !!(e.gender && p.gender && e.gender !== p.gender)],
+      ["Mobile Number", e.mobile || "–", p.mobile || "–", !!(e.mobile && p.mobile && e.mobile !== p.mobile.replace(/\D/g, ""))],
+      ["ID Number", e.idNumber || "–", p.idType === "Not available" ? "–" : p.idNumber || "–", !!(e.idNumber && p.idNumber && e.idNumber !== p.idNumber)]
+    ];
+    return `<div class="dialog-backdrop" id="compare-dialog">
+      <div class="dialog alert-dialog" role="dialog" aria-modal="true" aria-labelledby="pm-title" aria-describedby="pm-desc">
+        <button class="dialog-close alert-x" data-action="close-compare" aria-label="Close">${ICON.close}</button>
+        <div class="alert-scroll">
+          <span class="alert-icon">${ICON.warn}</span>
+          <h2 class="alert-title" id="pm-title">Possible Match Found</h2>
+          <p class="alert-desc" id="pm-desc">We found an existing registration that may belong to this person. Review the details to confirm.</p>
+          <ul class="reason-bar" aria-label="Why this may be the same person">
+            ${m.same.map(r => `<li>${esc(r)}</li>`).join("")}
+            ${m.diff.map(r => `<li class="is-diff">${esc(r)}</li>`).join("")}
+          </ul>
+          <table class="pm-table">
+            <caption class="sr-only">Existing record compared with this registration</caption>
+            <thead><tr>
+              <th scope="col">Field</th>
+              <th scope="col">Existing record<span class="pm-id">ID ${esc(regId(e))}</span></th>
+              <th scope="col">This registration</th>
+            </tr></thead>
+            <tbody>${rows.map(([l, a, b, d]) => `<tr class="${d ? "is-diff" : ""}"><th scope="row">${esc(l)}</th><td>${esc(a)}</td><td>${esc(b)}${d ? '<span class="sr-only"> (different)</span>' : ""}</td></tr>`).join("")}</tbody>
+          </table>
+        </div>
+        <div class="alert-actions">
+          <button class="btn btn-teal" data-action="same-person" data-i="${state.compareIdx}">Use Matched Registration</button>
+          <button class="btn btn-grey" data-action="continue-current">Continue Current Registration</button>
+        </div>
+      </div>
+    </div>`;
+  }
 
   // ---------- Search results (W3) ----------
   function searchResultsHtml() {
@@ -825,7 +840,8 @@
       </div>
       <div class="toast" id="toast" role="status" hidden></div>`;
     document.title = `${SCREENS[state.route].name} – Duplication Flow`;
-    if (document.getElementById("nearby-dialog")) document.querySelector("#nearby-dialog button")?.focus();
+    if (document.getElementById("compare-dialog")) document.getElementById("pm-title")?.setAttribute("tabindex", "-1"), document.getElementById("pm-title")?.focus();
+    else if (document.getElementById("nearby-dialog")) document.querySelector("#nearby-dialog button")?.focus();
     else if (focusTitle) document.getElementById("page-title")?.focus({ preventScroll: true });
     if (state.route === "search" && !state.query) document.getElementById("search-input")?.focus();
     syncDemoPanel();
@@ -1008,19 +1024,28 @@
       state.matches = hh().members.map(m => compare(m, p)).filter(Boolean).sort((a, b) => TIER_RANK[b.tier] - TIER_RANK[a.tier] || b.n - a.n);
       state.reason = { why: "", supervisor: false };
       if (!state.matches.length) return savePerson();
-      if (state.matches.length === 1) { state.compareIdx = 0; return go("compare"); }
+      if (state.matches.length === 1) { state.compareIdx = 0; state.compareOpen = true; return render({ focusTitle: false }); }
+      state.compareOpen = false;
       go("matches");
     },
 
     // W7 / W8
-    "open-compare"(btn) { state.compareIdx = Number(btn.dataset.i); go("compare"); },
-    "same-person"() {
+    "open-compare"(btn) { state.compareIdx = Number(btn.dataset.i); state.compareOpen = true; render({ focusTitle: false }); },
+    "close-compare"() { state.compareOpen = false; render({ focusTitle: false }); },
+    // Continue Current Registration: weak match -> one-tap reason; strong -> reason screen with second confirm.
+    "continue-current"() {
+      const tier = state.route === "matches" && !state.compareOpen ? topTier() : state.matches[state.compareIdx].tier;
+      state.compareOpen = false;
+      render({ focusTitle: false });
+      if (tier === "Low") openDialog("quick-dialog"); else go("reason");
+    },
+    "same-person"(btn) {
+      if (btn && btn.dataset.i) state.compareIdx = Number(btn.dataset.i);
+      state.compareOpen = false;
       const e = state.matches[state.compareIdx].member;
       backTo("overview");
       toast(`${e.name} is already registered. No new record added.`);
     },
-    "new-person"() { go("reason"); },
-    "open-quick-reason"() { openDialog("quick-dialog"); },
     "close-quick"() { closeDialog("quick-dialog"); },
     "quick-reason"(btn) { savePerson({ override: { reason: btn.dataset.r, tier: "Low" } }); },
 
@@ -1106,6 +1131,7 @@
     if (!document.getElementById("help-sheet")?.hidden) closeHelp();
     ["quick-dialog", "confirm-dialog"].forEach(id => { const d = document.getElementById(id); if (d && !d.hidden) closeDialog(id); });
     if (document.getElementById("nearby-dialog")) ACTIONS["close-nearby"]();
+    if (document.getElementById("compare-dialog")) ACTIONS["close-compare"]();
   });
 
   // ---------- Prototype controls (outside the phone) ----------
