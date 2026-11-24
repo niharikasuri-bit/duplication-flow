@@ -236,9 +236,9 @@
   const lastSync = s => { const m = /Last succeeded (.+)$/.exec(String(s || "")); return m ? m[1] : ""; };
   function syncNotice(f) {
     const items = f.type === "delivery"
-      ? f.deliveries.map((d, i) => d.failed ? `The vaccination in record ${i + 1} was saved while the phone could not sync${lastSync(d.sync) ? ` (last synced ${lastSync(d.sync)})` : ""}, so the worker could not see the other vaccination.` : "").filter(Boolean)
-      : f.syncFailed ? [`Record 2 was saved while the phone could not sync${lastSync(f.b.sync) ? ` (last synced ${lastSync(f.b.sync)})` : ""}, so the worker could not see record 1.`] : [];
-    return items.map(t => `<div class="sync-notice" role="note"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg><div><p class="sync-notice-title">Sync failed</p><p>${esc(t)}</p></div></div>`).join("");
+      ? f.deliveries.map((d, i) => d.failed ? [i + 1, `This vaccination was saved while the phone was not synced${lastSync(d.sync) ? `. Last synced ${lastSync(d.sync)}` : ""}. The worker might not have seen the other vaccination.`] : null).filter(Boolean)
+      : f.syncFailed ? [[2, `This record was saved while the phone was not synced${lastSync(f.b.sync) ? `. Last synced ${lastSync(f.b.sync)}` : ""}. The worker might not have seen record 1.`]] : [];
+    return items.map(([n, t]) => `<div class="sync-notice" role="note"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg><div><p class="sync-notice-title">Record ${n}: sync failed</p><p>${esc(t)}</p></div></div>`).join("");
   }
 
   // Same structure on every review: summary, sync notice, records, people.

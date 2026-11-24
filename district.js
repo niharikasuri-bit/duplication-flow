@@ -205,9 +205,9 @@
   const lastSync = s => { const m = /Last succeeded (.+)$/.exec(String(s || "")); return m ? m[1] : ""; };
   function syncNotice(f) {
     const items = f.type === "delivery"
-      ? f.deliveries.map((d, i) => d.failed ? `The vaccination in record ${i + 1} was saved while the phone could not sync${lastSync(d.sync) ? ` (last synced ${lastSync(d.sync)})` : ""}, so the worker could not see the other vaccination.` : "").filter(Boolean)
-      : f.syncFailed ? [`Record 2 was saved while the phone could not sync${lastSync(f.b.sync) ? ` (last synced ${lastSync(f.b.sync)})` : ""}, so the worker could not see record 1.`] : [];
-    return items.map(t => `<div class="sync-notice" role="note"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg><div><p class="sync-notice-title">Sync failed</p><p>${esc(t)}</p></div></div>`).join("");
+      ? f.deliveries.map((d, i) => d.failed ? [i + 1, `This vaccination was saved while the phone was not synced${lastSync(d.sync) ? `. Last synced ${lastSync(d.sync)}` : ""}. The worker might not have seen the other vaccination.`] : null).filter(Boolean)
+      : f.syncFailed ? [[2, `This record was saved while the phone was not synced${lastSync(f.b.sync) ? `. Last synced ${lastSync(f.b.sync)}` : ""}. The worker might not have seen record 1.`]] : [];
+    return items.map(([n, t]) => `<div class="sync-notice" role="note"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg><div><p class="sync-notice-title">Record ${n}: sync failed</p><p>${esc(t)}</p></div></div>`).join("");
   }
   // Header: label on the left, value on the right.
   const flagHead = f => `<div class="card dq-flaghead">
@@ -215,20 +215,22 @@
         <div><dt>Flag ID</dt><dd>${esc(f.id)}</dd></div>
         <div><dt>Reason</dt><dd>${esc(ISSUE[f.type])}</dd></div>
         <div><dt>Match</dt><dd>${tierPill(f.tier)}</dd></div>
+        ${f.type === "household" ? `<div><dt>Distance</dt><dd>${esc(f.distance)} m apart</dd></div>` : `<div><dt>Household</dt><dd>${esc(f.household)}</dd></div>`}
         ${f.reason ? `<div><dt>Worker’s reason</dt><dd>${esc(f.reason)}</dd></div>` : ""}
       </dl>
     </div>
-    ${syncNotice(f)}
-    <ul class="dq-legend" aria-label="Highlight key"><li class="k-same">Same</li><li class="k-similar">Similar</li><li class="k-diff">Different</li></ul>`;
+    ${syncNotice(f)}`;
+  const LEGEND = `<ul class="dq-legend" aria-label="Highlight key"><li class="k-same">Same</li><li class="k-similar">Similar</li><li class="k-diff">Different</li></ul>`;
+  const section = (title, inner, legend = true) => `<section class="card dq-block"><h2 class="dq-section">${title}</h2>${legend ? LEGEND : ""}${inner}</section>`;
   const doneCard = f => f.status !== "Open" ? `<div class="card dq-done">${statusPill(f.status)}<p>Reason for decision: ${esc(f.rootCause || "–")}</p>${f.comment ? `<p>${esc(f.comment)}</p>` : ""}</div>` : "";
 
   function reviewDelivery(f) {
     const done = f.status !== "Open", [d1, d2] = f.deliveries;
-    const rows = [["Child", d1.person || f.title, d2.person || f.title, "similar"], ["Gender", f.gender, f.gender], ["Age", f.age, f.age], ["Household", f.household, f.household], ["Round", f.round, f.round], ["Vaccinated", d1.time, d2.time, false], ["Household coordinates", d1.coords, d2.coords, false]];
+    const rows = [["Child", d1.person || f.title, d2.person || f.title, "similar"], ["Gender", f.gender, f.gender], ["Age", f.age, f.age], ["Vaccinated", d1.time, d2.time, false]];
     return {
       title: "Review Duplicates",
       body: `${flagHead(f)}
-        ${compareTable(rows, "Record 1", "Record 2", "Record 1 compared with record 2")}
+        ${section("Vaccinations", compareTable(rows, "Record 1", "Record 2", "Record 1 compared with record 2"))}
         ${doneCard(f)}`,
       footer: done ? "" : `<button class="btn btn-primary" data-action="decide" data-d="Confirmed">Confirm Double Vaccination</button>
         <button class="btn btn-secondary" data-action="decide" data-d="Not a duplicate">Not a Duplicate</button>`
@@ -238,21 +240,24 @@
     if (flag().type === "delivery") return reviewDelivery(flag());
     const f = flag(), isHH = f.type === "household", done = f.status !== "Open";
     const rows = isHH
-      ? [["Household head", f.a.head, f.b.head, "similar"], ["Number of members", f.a.members, f.b.members], ["Distance", "–", `${f.distance} m from record 1`, false], ["Household coordinates", f.a.coords, f.b.coords, false], ["Created", f.a.at, f.b.at, false]]
-      : [["Full name", f.a.name, f.b.name, "similar"], ["Gender", f.a.gender, f.b.gender], ["Age", f.a.age, f.b.age, "similar"], ["Date of birth", f.a.dob, f.b.dob, "similar"], ["ID number", f.a.idNo, f.b.idNo], ["Household", f.household, f.household], ["Created", f.a.at, f.b.at, false]];
+      ? [["Household head", f.a.head, f.b.head, "similar"], ["Number of members", f.a.members, f.b.members], ["Created", f.a.at, f.b.at, false]]
+      : [["Full name", f.a.name, f.b.name, "similar"], ["Gender", f.a.gender, f.b.gender], ["Age", f.a.age, f.b.age, "similar"], ["Date of birth", f.a.dob, f.b.dob, "similar"], ["ID number", f.a.idNo, f.b.idNo], ["Created", f.a.at, f.b.at, false]];
     const parse = s => { if (!s || s === "–") return null; const [name, g, age] = s.split(", "); return { name, gender: { F: "Female", M: "Male" }[g] || g, age }; };
-    const people = isHH ? (f.pairs || []).map((p, i) => {
-      const a = parse(p.a), b = parse(p.b);
-      return `<div class="dq-person">
-          <div class="dq-head"><h3 class="dq-subtitle">Person ${i + 1}</h3>${p.match ? tierPill(p.match) : `<span class="dq-pill st-none">No match</span>`}</div>
-          ${compareTable(b ? [["Name", a.name, b.name, "similar"], ["Gender", a.gender, b.gender], ["Age", a.age, b.age, "similar"]] : [["Name", a.name, "–", false], ["Gender", a.gender, "–", false], ["Age", a.age, "–", false]], "Record 1", "Record 2", `Person ${i + 1} in both households`)}
-        </div>`;
-    }).join("") : "";
+    const people = isHH ? `<table class="pm-table dq-table dq-people-table">
+        <caption class="sr-only">People in both households</caption>
+        <thead><tr><th scope="col">Record 1</th><th scope="col">Record 2</th></tr></thead>
+        <tbody>${(f.pairs || []).map(p => {
+          const a = parse(p.a), b = parse(p.b);
+          const m = b ? (a.name === b.name && a.age === b.age ? "same" : "similar") : "";
+          const cell = x => x ? `<span class="dq-pname">${esc(x.name)}</span><span class="dq-pmeta">${esc(x.gender)}, ${esc(x.age)}</span>` : `<span class="dq-pmeta">No match</span>`;
+          return `<tr class="${m ? `mt-${m}` : ""}"><td>${cell(a)}</td><td>${cell(b)}</td></tr>`;
+        }).join("")}</tbody>
+      </table>` : "";
     return {
       title: "Review Duplicates",
       body: `${flagHead(f)}
-        ${compareTable(rows, `Record 1<span class="pm-id">ID ${esc(f.a.id)}</span>`, `Record 2<span class="pm-id">ID ${esc(f.b.id)}</span>`, "Record 1 compared with record 2")}
-        ${isHH ? `<div class="card dq-people"><h2 class="dq-section">People in both households</h2>${people}</div>` : ""}
+        ${section(isHH ? "Households" : "People", compareTable(rows, `Record 1<span class="pm-id">${esc(f.a.id)}</span>`, `Record 2<span class="pm-id">${esc(f.b.id)}</span>`, "Record 1 compared with record 2"))}
+        ${isHH ? section("People in both households", people, false) : ""}
         ${doneCard(f)}`,
       footer: done ? "" : `<button class="btn btn-primary" data-action="decide" data-d="Confirmed">Confirm Duplicate</button>
         <button class="btn btn-secondary" data-action="decide" data-d="Not a duplicate">Not a Duplicate</button>`

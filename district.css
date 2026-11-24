@@ -127,3 +127,14 @@
 .sync-notice-title { font-weight: 700; color: #6B4A00; margin-bottom: 2px; }
 .dq-people { margin-top: 16px; }
 .dq-people .dq-section { margin-top: 0; }
+
+/* Less clutter on mobile review */
+.dq-block { margin-top: 16px; }
+.dq-block .dq-section { margin-top: 0; }
+.dq-block .dq-legend { margin-top: 8px; }
+.dq-block .dq-table { margin-top: 12px; }
+.dq-table th[scope="row"] { width: 34%; font-weight: 500; }
+.dq-people-table thead th:first-child { width: auto; }
+.dq-pname { display: block; font-weight: 500; color: var(--text); }
+.dq-pmeta { display: block; margin-top: 2px; font-size: 12px; line-height: 16px; color: #707070; }
+.sync-notice { font-size: 13px; line-height: 18px; padding: 10px 12px; }
