@@ -67,7 +67,7 @@
     { id: "hh-1", head: "Mohammed Diallo", m: 20, members: [
       { id: "p-11", name: "Mohammed Diallo", gender: "Male", age: Y(34, 2), head: true },
       { id: "p-12", name: "Fatou Diallo", gender: "Female", age: Y(29), mobile: "076123456" },
-      { id: "p-13", name: "Aminata Diallo", gender: "Female", age: Y(3, 2), status: "done", servedAt: "Today, 09:20", servedBy: "A. Sesay" },
+      { id: "p-13", name: "Aminata Diallo", gender: "Female", age: Y(3, 2), status: "done", servedAt: "Today, 09:20", servedBy: "A. Sesay", servedWhere: "Solimbo market" },
       { id: "p-14", name: "Ibrahima Diallo", gender: "Male", age: Y(0, 8), status: "pending" }
     ] },
     { id: "hh-2", head: "Fatoumata Camara", m: 35, members: [
@@ -93,7 +93,7 @@
     ] },
     { id: "hh-5", head: "Ousmane Sow", m: 900, members: [
       { id: "p-51", name: "Ousmane Sow", gender: "Male", age: Y(45), head: true },
-      { id: "p-52", name: "Aissatou Sow", gender: "Female", age: Y(3, 5), status: "done", servedAt: "Yesterday, 15:05", servedBy: "M. Kargbo" }
+      { id: "p-52", name: "Aissatou Sow", gender: "Female", age: Y(3, 5), status: "done", servedAt: "Yesterday, 15:05", servedBy: "M. Kargbo", servedWhere: "this household" }
     ] }
   ];
 
@@ -108,20 +108,26 @@
   const freshStore = () => ({
     households: SEED_HH(),
     pending: 0,
-    sync: "fresh",            // fresh | stale | incomplete | offline | uploadFailed
+    // Each sync type succeeds or fails on its own; a partial download counts as failed.
+    sync: { reg: true, status: true, flags: true },
+    upload: "ok",             // ok | failed
     retryWorks: true,
     retryFailed: false,       // a retry has failed → offer Continue Without Sync
-    staleMode: false,
+    continued: false,         // worker carried on after a failed sync
     gpsOk: true,
     progress: { completed: 15, target: 80 },
     log: []                   // search terms + candidates shown before a create
   });
   let store;
   try { store = JSON.parse(localStorage.getItem(STORE_KEY)) || freshStore(); } catch (e) { store = freshStore(); }
+  if (typeof store.sync !== "object") store = freshStore();   // older demo data
   const save = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) { /* private mode */ } };
 
-  const fresh = () => store.sync === "fresh";
-  const deviceHouseholds = () => store.households.filter(h => !(h.late && (store.sync === "stale" || store.sync === "incomplete")));
+  const LAST_OK = "Today, 08:10", LAST_GOOD_BEFORE = "Yesterday, 17:40";
+  const syncOk = () => store.sync.reg && store.sync.status && store.sync.flags;
+  const lastOk = ok => (ok ? LAST_OK : LAST_GOOD_BEFORE);
+  // Households registered by other workers since the last successful registration sync.
+  const deviceHouseholds = () => store.households.filter(h => !(h.late && !store.sync.reg));
   const findHH = id => store.households.find(h => h.id === id);
 
   // ---------- Session state ----------
@@ -409,54 +415,55 @@
     return name.split(re).map((part, i) => (i % 2 ? `<mark>${esc(part)}</mark>` : esc(part))).join("");
   }
 
-  // ---------- Sync wording (W1 + W11) ----------
-  const SYNC = {
-    fresh:        { pill: "Up to date", kind: "ok", reg: "Today, 08:10", status: "Today, 08:10", flags: "Today, 08:10", records: "1,248" },
-    stale:        { pill: "Out of date", kind: "warn", reg: "Yesterday, 17:40", status: "Yesterday, 17:40", flags: "Today, 08:10", records: "1,236",
-                    text: "Registrations from other workers since yesterday may be missing. Sync before you register.", btn: "Retry Sync" },
-    incomplete:   { pill: "Incomplete", kind: "warn", reg: "Stopped at 812 of 1,248", status: "Today, 08:10", flags: "Today, 08:10", records: "812",
-                    text: "Sync stopped before all records downloaded. Some households won’t show in search.", btn: "Resume Sync" },
-    offline:      { pill: "Offline", kind: "info", reg: "Today, 08:10", status: "Today, 08:10", flags: "Today, 08:10", records: "1,248",
-                    text: "No internet connection. You can keep working. Records upload when you’re back online.", btn: "Retry Sync" },
-    uploadFailed: { pill: "Upload failed", kind: "error", reg: "Today, 08:10", status: "Today, 08:10", flags: "Today, 08:10", records: "1,248",
-                    text: "Some records didn’t upload. Your records are saved on this device.", btn: "Retry Upload" }
-  };
+  // ---------- Sync result (W1 + W11) ----------
+  // Two states per sync type: succeeded or failed. Failed shows when it last succeeded.
+  const syncResult = ok => (ok ? `Succeeded, ${LAST_OK.toLowerCase()}` : `Failed. Last succeeded ${LAST_GOOD_BEFORE.toLowerCase()}`);
 
   function syncCard() {
-    const s = SYNC[store.sync];
-    const row = (l, v) => `<div class="pair"><dt>${esc(l)}</dt><dd>${esc(v)}</dd></div>`;
-    const canContinue = store.retryFailed && (store.sync === "stale" || store.sync === "incomplete") && !store.staleMode;
+    const s = store.sync, ok = syncOk();
+    const row = (l, good) => `<div class="pair sync-row ${good ? "" : "is-failed"}"><dt>${esc(l)}</dt><dd>
+        <span class="sync-state">${ICON[good ? "ok" : "stop"]}${good ? "Succeeded" : "Failed"}</span>
+        <span class="sync-time">${esc(good ? LAST_OK : `Last succeeded ${LAST_GOOD_BEFORE.toLowerCase()}`)}</span></dd></div>`;
+    const stat = (l, v) => `<div class="pair"><dt>${esc(l)}</dt><dd>${esc(v)}</dd></div>`;
+    let msg = "", btn = "";
+    if (!ok) {
+      msg = notice("error", store.continued
+        ? "<b>Sync failed.</b> You’re continuing without the latest data. New records are checked again after upload."
+        : `<b>Sync failed.</b> ${!s.reg ? "Search may miss households. " : ""}${!s.status ? "Recent vaccinations may be missing. " : ""}Try again before you start.`);
+      btn = `<button class="btn btn-secondary btn-sm" data-action="retry-sync">${ICON.sync}Retry Sync</button>
+        ${store.retryFailed && !store.continued ? `<button class="btn-link" data-action="continue-failed">Continue Without Sync</button>` : ""}`;
+    } else if (store.upload === "failed") {
+      msg = notice("error", `<b>Upload failed.</b> ${esc(plural(store.pending, "record"))} saved on this device didn’t upload.`);
+      btn = `<button class="btn btn-secondary btn-sm" data-action="retry-upload">${ICON.sync}Retry Upload</button>`;
+    }
     return `<section class="card sync-card" aria-labelledby="sync-title">
       <div class="sync-head">
         <h2 class="card-title" id="sync-title">Data on this device</h2>
-        <span class="pill pill-${s.kind}">${esc(s.pill)}</span>
+        <span class="pill pill-${ok ? "ok" : "error"}">${ok ? "Sync succeeded" : "Sync failed"}</span>
       </div>
       <dl class="pairs sync-rows">
         ${row("Registrations", s.reg)}
         ${row("Vaccination status", s.status)}
         ${row("Flags", s.flags)}
-        ${row("Records on device", s.records)}
-        ${row("Waiting to upload", String(store.pending))}
       </dl>
-      ${s.text ? notice(s.kind === "error" ? "error" : s.kind === "info" ? "info" : "warn", esc(store.staleMode ? "You’re working without the latest data. New records are checked again after upload." : s.text)) : ""}
-      ${s.btn ? `<div class="sync-actions">
-        <button class="btn btn-secondary btn-sm" data-action="retry-sync">${ICON.sync}${esc(s.btn)}</button>
-        ${canContinue ? `<button class="btn-link" data-action="continue-stale">Continue Without Sync</button>` : ""}
-      </div>` : ""}
+      <dl class="pairs sync-rows sync-stats">
+        ${stat("Records on device", s.reg ? "1,248" : "1,236")}
+        ${stat("Waiting to upload", String(store.pending))}
+      </dl>
+      ${msg}
+      ${btn ? `<div class="sync-actions">${btn}</div>` : ""}
     </section>`;
   }
 
-  // W11: thin banner under the header on every inner screen.
+  // W11: thin banner under the Back / Help row on every inner screen.
   function sysBanner() {
     const n = store.pending;
-    const b = {
-      stale: ["warn", "Working without the latest data.", "Retry"],
-      incomplete: ["warn", "Some records didn’t download. Search may miss households.", "Resume"],
-      offline: ["info", `Offline. ${plural(n, "record")} waiting to upload.`, ""],
-      uploadFailed: ["error", `${plural(n || 3, "record")} didn’t upload.`, "Retry"]
-    }[store.sync];
+    let b = null;
+    if (!syncOk()) b = ["error", store.continued ? "Sync failed. Continuing without the latest data." : "Sync failed. Recent records may be missing.", "Retry", "retry-sync"];
+    else if (store.upload === "failed" && n) b = ["error", `${plural(n, "record")} didn’t upload.`, "Retry", "retry-upload"];
+    else if (n) b = ["info", `${plural(n, "record")} waiting to upload.`, "", ""];
     if (!b) return "";
-    return `<div class="sys-banner banner-${b[0]}" role="status">${ICON[b[0] === "error" ? "stop" : b[0]]}<span>${esc(b[1])}</span>${b[2] ? `<button class="banner-btn" data-action="retry-sync">${esc(b[2])}</button>` : ""}</div>`;
+    return `<div class="sys-banner banner-${b[0]}" role="status">${ICON[b[0] === "error" ? "stop" : "info"]}<span>${esc(b[1])}</span>${b[2] ? `<button class="banner-btn" data-action="${b[3]}">${esc(b[2])}</button>` : ""}</div>`;
   }
 
   // ---------- Screens ----------
@@ -504,8 +511,12 @@
       const gps = d.noGps
         ? notice("info", "Saving without location. Your supervisor checks this household against a wider area.")
         : store.gpsOk
-          ? `<input class="input" id="hh-gps" value="Accuracy: 6 m" readonly aria-describedby="gps-ok" /><p class="gps" id="gps-ok">${ICON.gps}Location captured</p>`
-          : notice("error", "Location not captured. Move to an open area and try again.",
+          ? `<div class="latlng">
+              <div><label class="field-label" for="hh-lat">Latitude</label><input class="input" id="hh-lat" value="8.48402" readonly /></div>
+              <div><label class="field-label" for="hh-lng">Longitude</label><input class="input" id="hh-lng" value="-13.22994" readonly /></div>
+            </div>
+            <p class="gps" id="gps-ok">${ICON.gps}Location captured. Accuracy 6 m</p>`
+          : notice("error", "Location not captured. Accuracy reading 48 m. Move to an open area and try again.",
               `<div class="notice-actions"><button class="btn btn-secondary btn-sm" data-action="retry-gps">${ICON.sync}Retry</button><button class="btn-link" data-action="no-gps">Save Without Location</button></div>`);
       return {
         tag: ASSIGNED_AREA,
@@ -648,10 +659,11 @@
               ${NEW_PERSON_REASONS.map(o => `<label class="radio"><input type="radio" name="r-why" value="${esc(o)}" ${o === r.why ? "checked" : ""}/>${esc(o)}</label>`).join("")}
               ${errorText("r-why", err)}
             </fieldset>
-            <label class="checkbox sup-check"><input type="checkbox" id="r-sup" ${r.supervisor ? "checked" : ""}/><span class="box">${ICON.tick}</span>Ask my supervisor to check these records</label>
           </div>
+          <p class="or-line">Not sure? Choose Needs Supervisor Check. The person is added and your supervisor checks the records.</p>
           ${confirmDialogHtml()}`,
-        footer: `<button class="btn btn-primary" data-action="reason-submit">${ICON.personAdd}Add as New Person</button>`
+        footer: `<button class="btn btn-primary" data-action="reason-submit">${ICON.personAdd}Add as New Person</button>
+          <button class="btn btn-secondary" data-action="needs-check">Needs Supervisor Check</button>`
       };
     },
 
@@ -660,13 +672,13 @@
       const p = member();
       let box, footer;
       if (p.status === "done") {
-        box = notice("error", `<b>Already vaccinated this round.</b> ${esc(p.servedAt)} by ${esc(p.servedBy)}. Don’t vaccinate again.`);
-        footer = `<button class="btn btn-primary" data-action="to-overview">Back to Household</button>`;
+        box = notice("error", `<b>Already vaccinated this round.</b> ${esc(p.servedAt)} by ${esc(p.servedBy)} at ${esc(p.servedWhere || "this household")}. Don’t vaccinate again.`);
+        footer = `<button class="btn btn-primary" data-action="to-overview">Back to Household</button><button class="btn btn-secondary" data-action="hold">Flag for Supervisor</button>`;
       } else if (p.flag) {
         box = notice("warn", "<b>This child may be registered twice.</b> Your supervisor will check the records. You can still vaccinate, so the child isn’t missed.");
         footer = `<button class="btn btn-primary" data-action="vaccinate">Vaccinate</button><button class="btn btn-secondary" data-action="hold">Hold and Flag</button>`;
-      } else if (!fresh()) {
-        box = notice("warn", `<b>Vaccination status may be out of date.</b> Last updated ${esc(SYNC[store.sync].status.toLowerCase())}. Ask the caregiver whether the child was vaccinated this round.`);
+      } else if (!store.sync.status) {
+        box = notice("warn", "<b>Vaccination sync failed.</b> Recent vaccinations may be missing. Ask the caregiver whether the child was vaccinated this round.");
         footer = `<button class="btn btn-primary" data-action="vaccinate">Vaccinate</button><button class="btn btn-secondary" data-action="hold">Hold and Flag</button>`;
       } else {
         box = notice("ok", "<b>Not vaccinated this round.</b> You can vaccinate this child.");
@@ -680,7 +692,7 @@
               <div class="pair"><dt>Name</dt><dd>${esc(p.name)}</dd></div>
               <div class="pair"><dt>Gender</dt><dd>${esc(p.gender || "–")}</dd></div>
               <div class="pair"><dt>Age</dt><dd>${esc(ageLabel(p.age))}</dd></div>
-              <div class="pair"><dt>Status updated</dt><dd>${esc(SYNC[store.sync].status)}</dd></div>
+              <div class="pair"><dt>Vaccination sync</dt><dd>${esc(syncResult(store.sync.status))}</dd></div>
             </dl>
           </div>
           ${box}`,
@@ -723,7 +735,7 @@
   function searchResultsHtml() {
     const q = state.query.trim();
     const hits = searchHouseholds(q);
-    const meta = !fresh() ? `<p class="search-meta">${ICON.warn}Searching records on this device, last synced ${esc(SYNC[store.sync].reg.toLowerCase())}.</p>` : "";
+    const meta = !store.sync.reg ? `<p class="search-meta search-failed">${ICON.stop}Registration sync failed. Last succeeded ${esc(LAST_GOOD_BEFORE.toLowerCase())}. Search may miss households.</p>` : "";
     if (!hits) return meta;
     if (!hits.length) {
       return `${meta}<div class="empty" role="status">
@@ -893,9 +905,13 @@
   function queueUpload() {
     store.pending++;
     save();
-    if (fresh()) setTimeout(() => { store.pending = Math.max(0, store.pending - 1); save(); syncDemoPanel(); }, 4000);
+    if (store.upload === "ok") setTimeout(() => {
+      if (store.upload !== "ok") return;
+      store.pending = Math.max(0, store.pending - 1); save(); syncDemoPanel();
+      const b = document.querySelector(".sys-banner"); if (b && !store.pending && syncOk()) b.remove();
+    }, 4000);
   }
-  const recordTags = () => [!fresh() ? "STALE_SYNC" : "", state.draftHH?.noGps ? "NO_GPS" : ""].filter(Boolean);
+  const recordTags = () => [!syncOk() ? "SYNC_FAILED" : "", state.draftHH?.noGps ? "NO_GPS" : ""].filter(Boolean);
 
   function savePerson(extra = {}) {
     const p = state.person;
@@ -915,7 +931,7 @@
       queueUpload();
       state.history = state.history.slice(0, state.history.lastIndexOf("search") + 1);
       state.route = "overview"; state.errors = {}; render();
-      toast(fresh() ? "Household created. Uploading now." : "Household created. Saved on this device.");
+      toast(store.upload === "ok" ? "Household created. Uploading now." : "Household created. Saved on this device.");
       return;
     }
     hh().members.push(rec);
@@ -934,21 +950,24 @@
     // W1
     "start-search"() { state.query = ""; go("search"); },
     "retry-sync"() {
-      const was = store.sync;
-      if (was === "offline" && !store.retryWorks) return toast("Still offline. Records upload when you’re back online.");
       if (store.retryWorks) {
-        store.sync = "fresh"; store.retryFailed = false; store.staleMode = false;
-        if (was === "uploadFailed" || was === "offline") store.pending = 0;
+        store.sync = { reg: true, status: true, flags: true }; store.retryFailed = false; store.continued = false;
         save(); render({ focusTitle: false });
-        toast(was === "uploadFailed" ? "Upload complete." : "Sync complete. Data is up to date.");
+        toast("Sync succeeded.");
       } else {
         store.retryFailed = true; save(); render({ focusTitle: false });
-        toast(was === "uploadFailed" ? "Upload failed again. Records stay saved on this device." : "Sync failed. Try again, or continue without sync.");
+        toast("Sync failed again. Try again, or continue without sync.");
       }
     },
-    "continue-stale"() {
-      store.staleMode = true; save(); render({ focusTitle: false });
-      toast("Working without the latest data. New records are checked again after upload.");
+    "continue-failed"() {
+      store.continued = true; save(); render({ focusTitle: false });
+      toast("Continuing without the latest data. New records are checked again after upload.");
+    },
+    "retry-upload"() {
+      if (store.retryWorks) {
+        store.upload = "ok"; store.pending = 0; save(); render({ focusTitle: false });
+        toast("Upload succeeded.");
+      } else toast("Upload failed again. Records stay saved on this device.");
     },
 
     // W3
@@ -1038,7 +1057,10 @@
     },
     "close-confirm"() { closeDialog("confirm-dialog"); },
     "confirm-new"() {
-      savePerson({ flag: state.reason.supervisor, override: { reason: state.reason.why, tier: topTier(), matched: state.matches.map(m => m.member.id) } });
+      savePerson({ override: { reason: state.reason.why, tier: topTier(), matched: state.matches.map(m => m.member.id) } });
+    },
+    "needs-check"() {
+      savePerson({ flag: true, override: { reason: state.reason.why || "Needs supervisor check", tier: topTier(), matched: state.matches.map(m => m.member.id) } });
     },
 
     // W10
@@ -1086,7 +1108,6 @@
     const t = e.target;
     if (t.id === "search-input") { state.query = t.value; refreshSearch(); return; }
     if (t.id === "p-head") { state.person.isHead = t.checked; return; }
-    if (t.id === "r-sup") { state.reason.supervisor = t.checked; return; }
     const key = t.type === "radio" ? t.name : t.id;
     if (FIELD_MAP[key]) { FIELD_MAP[key](t.value); clearError(key); }
     if (key === "p-idtype") document.getElementById("p-idnumber-wrap").hidden = t.value === "Not available";
@@ -1104,7 +1125,7 @@
     }
     if (["p-dob", "p-years", "p-months"].includes(key)) clearError("p-age");
   });
-  $phone.addEventListener("change", e => { if (e.target.id === "p-head") state.person.isHead = e.target.checked; if (e.target.id === "r-sup") state.reason.supervisor = e.target.checked; });
+  $phone.addEventListener("change", e => { if (e.target.id === "p-head") state.person.isHead = e.target.checked; });
 
   document.addEventListener("keydown", e => {
     if (e.key !== "Escape") return;
@@ -1115,17 +1136,27 @@
 
   // ---------- Prototype controls (outside the phone) ----------
   const demo = document.getElementById("demo");
+  const SYNC_PRESETS = {
+    ok: { reg: true, status: true, flags: true },
+    failed: { reg: false, status: false, flags: false },
+    regFailed: { reg: false, status: true, flags: true }
+  };
   function syncDemoPanel() {
     if (!demo) return;
-    demo.querySelector("#demo-sync").value = store.sync;
+    const s = store.sync;
+    demo.querySelector("#demo-sync").value = syncOk() ? "ok" : s.status ? "regFailed" : "failed";
+    demo.querySelector("#demo-upload").value = store.upload;
     demo.querySelector("#demo-retry").value = store.retryWorks ? "yes" : "no";
     demo.querySelector("#demo-gps").value = store.gpsOk ? "yes" : "no";
     demo.querySelector("#demo-pending").textContent = String(store.pending);
   }
   demo?.addEventListener("change", e => {
     if (e.target.id === "demo-sync") {
-      store.sync = e.target.value; store.retryFailed = false; store.staleMode = false;
-      if (store.sync === "uploadFailed" && !store.pending) store.pending = 3;
+      store.sync = { ...SYNC_PRESETS[e.target.value] }; store.retryFailed = false; store.continued = false;
+    }
+    if (e.target.id === "demo-upload") {
+      store.upload = e.target.value;
+      if (store.upload === "failed" && !store.pending) store.pending = 3;
     }
     if (e.target.id === "demo-retry") store.retryWorks = e.target.value === "yes";
     if (e.target.id === "demo-gps") store.gpsOk = e.target.value === "yes";

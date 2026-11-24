@@ -393,6 +393,16 @@ body { display: flex; align-items: center; justify-content: center; min-height: 
 .sync-rows .pair dt { font-weight: 400; color: var(--text-2); }
 .sync-rows .pair dd { text-align: right; font-weight: 500; }
 .sync-card .notice { margin-top: 12px; }
+.sync-row dd { display: flex; flex-direction: column; align-items: flex-end; font-weight: 400 !important; }
+.sync-state { display: inline-flex; align-items: center; gap: 4px; font-weight: 500; color: var(--success); }
+.sync-state svg { width: 16px; height: 16px; flex: 0 0 16px; }
+.sync-row.is-failed .sync-state { color: var(--error); }
+.sync-time { font-size: 12px; line-height: 16px; color: var(--text-2); }
+.sync-stats { border-top: 1px solid var(--border); padding-top: 10px; }
+.latlng { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.or-line { margin-top: 16px; font-size: 14px; line-height: 20px; color: var(--text-2); }
+.search-meta.search-failed { color: var(--error); align-items: flex-start; }
+.search-meta.search-failed svg { color: var(--error); margin-top: 2px; }
 .sync-actions { margin-top: 12px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
 .btn-sm { height: 36px; width: auto; padding: 0 14px; font-size: 16px; }
 .btn-sm svg { width: 20px; height: 20px; }
