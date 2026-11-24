@@ -429,13 +429,13 @@
     let msg = "", btn = "";
     if (!ok) {
       msg = notice("error", store.continued
-        ? "<b>Sync failed.</b> You’re continuing without the latest data. New records are checked again after upload."
+        ? "<b>Sync failed.</b> You’re continuing without the latest data. New records are checked again once they sync."
         : `<b>Sync failed.</b> ${!s.reg ? "Search may miss households. " : ""}${!s.status ? "Recent vaccinations may be missing. " : ""}Try again before you start.`);
       btn = `<button class="btn btn-secondary btn-sm" data-action="retry-sync">${ICON.sync}Retry Sync</button>
         ${store.retryFailed && !store.continued ? `<button class="btn-link" data-action="continue-failed">Continue Without Sync</button>` : ""}`;
     } else if (store.upload === "failed") {
-      msg = notice("error", `<b>Upload failed.</b> ${esc(plural(store.pending, "record"))} saved on this device didn’t upload.`);
-      btn = `<button class="btn btn-secondary btn-sm" data-action="retry-upload">${ICON.sync}Retry Upload</button>`;
+      msg = notice("error", `<b>Sync to the server failed.</b> ${esc(plural(store.pending, "record"))} saved on this device didn’t sync.`);
+      btn = `<button class="btn btn-secondary btn-sm" data-action="retry-upload">${ICON.sync}Retry Sync</button>`;
     }
     return `<section class="card sync-card" aria-labelledby="sync-title">
       <div class="sync-head">
@@ -449,7 +449,7 @@
       </dl>
       <dl class="pairs sync-rows sync-stats">
         ${stat("Records on device", s.reg ? "1,248" : "1,236")}
-        ${stat("Waiting to upload", String(store.pending))}
+        ${stat("Records waiting to sync", String(store.pending))}
       </dl>
       ${msg}
       ${btn ? `<div class="sync-actions">${btn}</div>` : ""}
@@ -461,8 +461,8 @@
     const n = store.pending;
     let b = null;
     if (!syncOk()) b = ["error", store.continued ? "Sync failed. Continuing without the latest data." : "Sync failed. Recent records may be missing.", "Retry", "retry-sync"];
-    else if (store.upload === "failed" && n) b = ["error", `${plural(n, "record")} didn’t upload.`, "Retry", "retry-upload"];
-    else if (n) b = ["info", `${plural(n, "record")} waiting to upload.`, "", ""];
+    else if (store.upload === "failed" && n) b = ["error", `Sync to the server failed. ${plural(n, "record")} didn’t sync.`, "Retry", "retry-upload"];
+    else if (n) b = ["info", `${plural(n, "record")} waiting to sync.`, "", ""];
     if (!b) return "";
     return `<div class="sys-banner banner-${b[0]}" role="status">${ICON[b[0] === "error" ? "stop" : "info"]}<span>${esc(b[1])}</span>${b[2] ? `<button class="banner-btn" data-action="${b[3]}">${esc(b[2])}</button>` : ""}</div>`;
   }
@@ -923,7 +923,7 @@
       queueUpload();
       state.history = state.history.slice(0, state.history.lastIndexOf("search") + 1);
       state.route = "overview"; state.errors = {}; render();
-      toast(store.upload === "ok" ? "Household created. Uploading now." : "Household created. Saved on this device.");
+      toast(store.upload === "ok" ? "Household created. Syncing now." : "Household created. Saved on this device.");
       return;
     }
     hh().members.push(rec);
@@ -953,13 +953,13 @@
     },
     "continue-failed"() {
       store.continued = true; save(); render({ focusTitle: false });
-      toast("Continuing without the latest data. New records are checked again after upload.");
+      toast("Continuing without the latest data. New records are checked again once they sync.");
     },
     "retry-upload"() {
       if (store.retryWorks) {
         store.upload = "ok"; store.pending = 0; save(); render({ focusTitle: false });
-        toast("Upload succeeded.");
-      } else toast("Upload failed again. Records stay saved on this device.");
+        toast("Records synced to the server.");
+      } else toast("Sync to the server failed again. Records stay saved on this device.");
     },
 
     // W3
