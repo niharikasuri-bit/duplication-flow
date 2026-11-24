@@ -142,7 +142,8 @@
     person: blankPerson(),
     matches: [],              // [{ member, tier, same[], diff[] }]
     compareIdx: 0,
-    compareOpen: false,       // W7 alert open over Individual Details or the matches list
+    compareOpen: false,
+    manyOpen: false,          // "N Matches Found" alert       // W7 alert open over Individual Details or the matches list
     reason: { why: "", supervisor: false },
     memberId: null,
     errors: {}
@@ -169,6 +170,8 @@
     d.setMonth(d.getMonth() - (Number(years) || 0) * 12 - (Number(months) || 0));
     return isoDate(d);
   }
+  const fmtDob = iso => (iso ? iso.split("-").reverse().join("/") : "–");
+  const memberDob = m => fmtDob(m.dob || dobFromAge(Math.floor(m.age / 12), m.age % 12));
   const personMonths = p => (Number(p.years) || 0) * 12 + (Number(p.months) || 0);
 
   // ---------- Fuzzy name matching ----------
@@ -583,13 +586,14 @@
             ${textField({ id: "p-mobile", label: "Mobile number", value: p.mobile, type: "tel", inputmode: "tel" })}
           </div>
           ${state.compareOpen ? compareDialogHtml() : ""}
+          ${state.manyOpen ? manyDialogHtml() : ""}
           ${state.matches.length ? quickReasonHtml() : ""}
           ${nearbyDialogHtml()}`,
         footer: `<button class="btn btn-primary" data-action="person-continue">Continue</button>`
       };
     },
 
-    // W8: existing "Existing matches" list, opened straight away (no "N matches found" step).
+    // W8: existing "Existing matches" list, opened from the "N Matches Found" alert.
     matches() {
       const item = (m, i) => `<li><article class="xm-card" aria-labelledby="xm-${i}">
           <div class="xm-head">
@@ -598,12 +602,12 @@
           <ul class="xm-reasons" aria-label="Why this may be the same person">${m.same.map(r => `<li>${esc(r)}</li>`).join("")}${m.diff.map(r => `<li class="is-diff">${esc(r)}</li>`).join("")}</ul>
           <dl class="xm-grid">
             <div><dt>Full name</dt><dd>${esc(m.member.name)}</dd></div>
-            <div><dt>Age</dt><dd>${esc(ageLabel(m.member.age))}</dd></div>
             <div><dt>Gender</dt><dd>${esc(m.member.gender || "–")}</dd></div>
+            <div><dt>Age</dt><dd>${esc(ageLabel(m.member.age))}</dd></div>
+            <div><dt>Date of birth</dt><dd>${esc(memberDob(m.member))}</dd></div>
           </dl>
           <div class="xm-actions">
             <button class="btn btn-primary" data-action="same-person" data-i="${i}" aria-describedby="xm-${i}">Use Matched Registration</button>
-            <button class="btn-link xm-compare" data-action="open-compare" data-i="${i}" aria-describedby="xm-${i}">Compare Details</button>
           </div>
         </article></li>`;
       return {
@@ -676,9 +680,10 @@
     const newAge = personMonths(p);
     const rows = [
       ["Full Name", e.name, p.name.trim(), nameSim(e.name, p.name) < 0.99],
-      ["Age", ageLabel(e.age), ageLabel(newAge), e.age !== newAge],
       ["Gender", e.gender || "–", p.gender || "–", !!(e.gender && p.gender && e.gender !== p.gender)],
-      ["Mobile Number", e.mobile || "–", p.mobile || "–", !!(e.mobile && p.mobile && e.mobile !== p.mobile.replace(/\D/g, ""))],
+      ["Age", ageLabel(e.age), ageLabel(newAge), e.age !== newAge],
+      ["Date of Birth", memberDob(e), fmtDob(p.dob), memberDob(e).slice(3) !== fmtDob(p.dob).slice(3)],
+      ["Mobile Number", e.mobile || "–", p.mobile.replace(/\D/g, "") || "–", !!(e.mobile && p.mobile && e.mobile !== p.mobile.replace(/\D/g, ""))],
       ["ID Number", e.idNumber || "–", p.idType === "Not available" ? "–" : p.idNumber || "–", !!(e.idNumber && p.idNumber && e.idNumber !== p.idNumber)]
     ];
     return `<div class="dialog-backdrop" id="compare-dialog">
@@ -686,7 +691,7 @@
         <button class="dialog-close" data-action="close-compare" aria-label="Close">${ICON.close}</button>
         ${ICON.alertWarn}
         <h2 class="dialog-title" id="pm-title">Possible Match Found</h2>
-        <p class="dialog-desc" id="pm-desc"><strong>${esc(e.name)}</strong> is already registered in this household and may be the same person. Review the details to confirm.</p>
+        <p class="dialog-desc" id="pm-desc">We found an existing registration that may belong to this person. Review the details to confirm.</p>
         <ul class="alert-reasons" aria-label="Why this may be the same person">
           ${m.same.map(r => `<li>${ICON.ok}<span>${esc(r)}</span></li>`).join("")}
           ${m.diff.map(r => `<li class="is-diff">${ICON.info}<span>${esc(r)}</span></li>`).join("")}
@@ -802,6 +807,23 @@
     </div>`;
   }
 
+  // Several matches: same idea and copy as the existing "3 Matches Found" alert.
+  function manyDialogHtml() {
+    const n = state.matches.length;
+    return `<div class="dialog-backdrop" id="many-dialog">
+      <div class="dialog alert" role="alertdialog" aria-modal="true" aria-labelledby="many-title" aria-describedby="many-desc">
+        <button class="dialog-close" data-action="close-many" aria-label="Close">${ICON.close}</button>
+        ${ICON.alertWarn}
+        <h2 class="dialog-title" id="many-title">${n} Matches Found</h2>
+        <p class="dialog-desc" id="many-desc">We found <strong>${n}</strong> existing registrations that may belong to this person. Review the matches and select the correct registration, or continue with a new registration.</p>
+        <div class="dialog-actions">
+          <button class="btn btn-primary" data-action="view-matches">View Matches</button>
+          <button class="btn btn-secondary" data-action="continue-current">Continue Current Registration</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
   let dialogReturn = null;
   function openDialog(id) {
     const d = document.getElementById(id);
@@ -843,6 +865,7 @@
       <div class="toast" id="toast" role="status" hidden></div>`;
     document.title = `${screen().name} – Duplication Flow`;
     if (document.getElementById("compare-dialog")) document.querySelector("#compare-dialog .btn-primary")?.focus();
+    else if (document.getElementById("many-dialog")) document.querySelector("#many-dialog .btn-primary")?.focus();
     else if (document.getElementById("nearby-dialog")) document.querySelector("#nearby-dialog button")?.focus();
     else if (focusTitle) document.getElementById("page-title")?.focus({ preventScroll: true });
     if (state.route === "search" && !state.query) document.getElementById("search-input")?.focus();
@@ -1054,17 +1077,20 @@
       state.reason = { why: "", supervisor: false };
       if (!state.matches.length) return savePerson();
       if (state.matches.length === 1) { state.compareIdx = 0; state.compareOpen = true; return render({ focusTitle: false }); }
-      state.compareOpen = false;
-      go("matches");
+      // Several matches: "N Matches Found" alert first, then the list.
+      state.compareOpen = false; state.manyOpen = true;
+      render({ focusTitle: false });
     },
+    "view-matches"() { state.manyOpen = false; go("matches"); },
+    "close-many"() { state.manyOpen = false; render({ focusTitle: false }); },
 
     // W7 / W8
     "open-compare"(btn) { state.compareIdx = Number(btn.dataset.i); state.compareOpen = true; render({ focusTitle: false }); },
     "close-compare"() { state.compareOpen = false; render({ focusTitle: false }); },
     // Continue Current Registration: weak match -> one-tap reason; strong -> reason screen with second confirm.
     "continue-current"() {
-      const tier = state.route === "matches" && !state.compareOpen ? topTier() : state.matches[state.compareIdx].tier;
-      state.compareOpen = false;
+      const tier = state.manyOpen || (state.route === "matches" && !state.compareOpen) ? topTier() : state.matches[state.compareIdx].tier;
+      state.compareOpen = false; state.manyOpen = false;
       render({ focusTitle: false });
       if (tier === "Low") openDialog("quick-dialog"); else go("reason");
     },
@@ -1161,6 +1187,7 @@
     ["quick-dialog", "confirm-dialog"].forEach(id => { const d = document.getElementById(id); if (d && !d.hidden) closeDialog(id); });
     if (document.getElementById("nearby-dialog")) ACTIONS["close-nearby"]();
     if (document.getElementById("compare-dialog")) ACTIONS["close-compare"]();
+    if (document.getElementById("many-dialog")) ACTIONS["close-many"]();
     if (document.getElementById("delivery-dialog")) ACTIONS["close-delivery"]();
   });
 

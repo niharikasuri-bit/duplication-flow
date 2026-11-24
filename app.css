@@ -567,9 +567,10 @@ body { display: flex; align-items: center; justify-content: center; min-height: 
 .xm-reasons { list-style: none; display: flex; flex-wrap: wrap; padding: 8px 12px; border-bottom: 1px solid #E3E8EE; background: #E5F1EC; font-size: 12px; line-height: 16px; font-weight: 500; color: #1F5E3F; }
 .xm-reasons li + li::before { content: "·"; margin: 0 6px; color: #8DB8A3; }
 .xm-reasons li.is-diff { color: #707070; font-weight: 400; }
-.xm-grid { display: grid; grid-template-columns: 1.4fr 1.2fr 0.9fr; border-bottom: 1px solid #E3E8EE; }
+.xm-grid { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #E3E8EE; }
 .xm-grid div { padding: 10px 12px; min-width: 0; }
-.xm-grid div + div { border-left: 1px solid #E3E8EE; }
+.xm-grid div:nth-child(even) { border-left: 1px solid #E3E8EE; }
+.xm-grid div:nth-child(n+3) { border-top: 1px solid #E3E8EE; }
 .xm-grid dt { font-size: 12px; line-height: 16px; font-weight: 500; color: #707070; text-transform: uppercase; letter-spacing: .02em; }
 .xm-grid dd { margin-top: 2px; font-size: 14px; line-height: 19px; color: #363636; word-break: break-word; }
 .xm-actions { padding: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
