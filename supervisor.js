@@ -2,7 +2,6 @@
  *
  *  #/flags          S1 Flag queue (delivery alerts first, then by tier)
  *  #/flags/<id>     S2 Side by side review, or S3 Delivery alert review
- *  #/aliases        S4 Alias map
  *  #/insights       S5 Insights
  *
  * Same people as the worker demo data. Decisions persist in localStorage.
@@ -558,7 +557,7 @@
       const f = store.flags.find(x => x.id === parts[1]);
       if (f) { html = f.type === "delivery" ? viewAlert(f) : f.type === "vaccination" ? viewWorkerFlag(f) : viewReview(f); title = f.type === "delivery" ? "Review Delivery Alert" : f.type === "vaccination" ? "Review Flagged Vaccination" : "Review Possible Duplicate"; }
     }
-    if (!html) html = { flags: viewFlags, aliases: viewAliases, dashboard: viewDashboard, insights: viewDashboard }[section]();
+    if (!html) html = ({ flags: viewFlags, dashboard: viewDashboard, insights: viewDashboard }[section] || viewFlags)();
     $page.innerHTML = html;
     document.title = `${title} – Duplication Flow`;
     document.querySelectorAll(".sidenav a").forEach(a => (a.dataset.nav === (section === "insights" ? "dashboard" : section) ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current")));

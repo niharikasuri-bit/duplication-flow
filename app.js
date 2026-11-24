@@ -23,7 +23,7 @@
   // ---------- Config ----------
   const ASSIGNED_AREA = "Solimbo";
   const NEARBY_M = 50;            // households compared at creation
-  const STORE_KEY = "duplication-flow-v1";
+  const STORE_KEY = "duplication-flow-v2";
 
   const SCREENS = {
     home:       { name: "Home", desc: "Check the data on this device before you start." },
@@ -44,25 +44,6 @@
     : state.route === "reason" && state.reasonFor === "household" ? "reasonHH" : state.route);
   const screen = () => SCREENS[screenKey()];
 
-  // Alias groups: spelling variants the sound of a name hides (per country, starter list).
-  const ALIAS_GROUPS = [
-    ["mohammed", "muhammad", "mohamed", "mohamad", "mamadou", "mamadu", "mohd", "momodu"],
-    ["fatima", "fatou", "fatoumata", "fatuma", "fatma", "fatimata"],
-    ["aminata", "aminatou", "amina", "aminah"],
-    ["ibrahima", "ibrahim", "ebrahim", "brahima"],
-    ["aissatou", "aisha", "aicha", "aysatu", "aichatou", "isatu"],
-    ["kadiatou", "khadija", "kadija", "hadja", "kadi"],
-    ["hawa", "awa", "hauwa"],
-    ["mariama", "maryam", "mariam", "mariatu"],
-    ["ousmane", "usman", "osman", "usmane"],
-    ["seydou", "saidu", "seidu", "saido"],
-    ["alpha", "alfa"],
-    ["hassan", "hasan", "assan"],
-    ["husseini", "hussein", "husein", "usseini"]
-  ];
-  const ALIAS = {};
-  ALIAS_GROUPS.forEach((g, i) => g.forEach(n => (ALIAS[n] = i)));
-
   const HONORIFICS = new Set(["mr", "mrs", "ms", "miss", "dr", "alhaji", "alhaja", "hajia", "haja", "pa", "ma"]);
   const FILLER = new Set(["of", "the"]);
 
@@ -71,7 +52,7 @@
   const SEED_HH = () => [
     { id: "hh-1", head: "Mohammed Diallo", m: 20, members: [
       { id: "p-11", name: "Mohammed Diallo", gender: "Male", age: Y(34, 2), head: true },
-      { id: "p-12", name: "Fatou Diallo", gender: "Female", age: Y(29), mobile: "076123456" },
+      { id: "p-12", name: "Fatou Diallo", gender: "Female", age: Y(29) },
       { id: "p-13", name: "Aminata Diallo", gender: "Female", age: Y(3, 2), status: "done", servedAt: "Today, 09:20", servedBy: "A. Sesay", servedWhere: "this household" },
       { id: "p-14", name: "Ibrahima Diallo", gender: "Male", age: Y(0, 8), status: "pending" }
     ] },
@@ -92,7 +73,7 @@
     ] },
     { id: "hh-3", head: "Muhammad Bah", m: 140, members: [
       { id: "p-31", name: "Muhammad Bah", gender: "Male", age: Y(40), head: true },
-      { id: "p-32", name: "Hawa Bah", gender: "Female", age: Y(2, 6), status: "pending" },
+      { id: "p-32", name: "Hawa Bah", gender: "Female", age: Y(2, 6), status: "pending", linkedTo: "p-72" },
       { id: "p-33", name: "Hassan Bah", gender: "Male", age: Y(1, 11), status: "pending" },
       { id: "p-34", name: "Husseini Bah", gender: "Male", age: Y(1, 11), status: "pending" }
     ] },
@@ -101,6 +82,12 @@
       { id: "p-52", name: "Aissatou Sow", gender: "Female", age: Y(3, 5), status: "done", servedAt: "Yesterday, 15:05", servedBy: "M. Kargbo", servedWhere: "this household" }
     ] }
   ];
+
+  // Confirmed by the supervisor as the same child as Hawa Bah (FLG linked); served in this household.
+  const LINKED_HH = () => ({ id: "hh-7", head: "Mamadu Bah", m: 180, members: [
+    { id: "p-71", name: "Mamadu Bah", gender: "Male", age: Y(36), head: true },
+    { id: "p-72", name: "Awa Bah", gender: "Female", age: Y(2, 6), status: "done", servedAt: "Today, 09:05", servedBy: "S. Turay", servedWhere: "Mamadu Bah’s household", linkedTo: "p-32" }
+  ] });
 
   const ID_TYPES = ["National ID", "Birth certificate", "Not available"];
   const NEW_PERSON_REASONS = ["Twin or sibling", "Different person with a similar name", "Checked with the caregiver", "Other"];
@@ -114,7 +101,7 @@
 
   // ---------- Persistence ----------
   const freshStore = () => ({
-    households: SEED_HH(),
+    households: [...SEED_HH(), LINKED_HH()],
     pending: 0,
     // Sync is all or nothing: everything syncs or nothing does. No partial states.
     synced: true,
@@ -136,9 +123,13 @@
   // Households registered by other workers since the last successful registration sync.
   const deviceHouseholds = () => store.households.filter(h => !(h.late && !store.synced));
   const findHH = id => store.households.find(h => h.id === id);
+  // Linked records share one delivery status: if either was vaccinated this round, both show vaccinated.
+  const allMembers = () => store.households.flatMap(h => h.members);
+  const linkedOf = p => (p.linkedTo ? allMembers().find(m => m.id === p.linkedTo) : null);
+  const isServed = p => p.status === "done" || (linkedOf(p) || {}).status === "done";
 
   // ---------- Session state ----------
-  const blankPerson = () => ({ name: "", isHead: false, idType: "", idNumber: "", dob: "", years: "", months: "", gender: "", mobile: "" });
+  const blankPerson = () => ({ name: "", isHead: false, idType: "", idNumber: "", dob: "", years: "", months: "", gender: "" });
   const state = {
     route: "home",
     history: [],
@@ -183,7 +174,7 @@
   const personMonths = p => (Number(p.years) || 0) * 12 + (Number(p.months) || 0);
 
   // ---------- Fuzzy name matching ----------
-  // 1 normalise · 2 starts-with · 3 edit distance (Jaro-Winkler) · 4 alias map
+  // 1 normalise · 2 starts-with · 3 edit distance (Jaro-Winkler) · 4 sound key (phonetic)
   const tokens = s => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z\s]/g, " ").split(/\s+/).filter(t => t && !HONORIFICS.has(t) && !FILLER.has(t));
 
@@ -216,8 +207,18 @@
     while (l < 4 && a[l] && a[l] === b[l]) l++;
     return j + l * 0.1 * (1 - j);
   }
-  const isAlias = (a, b) => ALIAS[a] !== undefined && ALIAS[a] === ALIAS[b];
-  const tokSim = (a, b) => (a === b ? 1 : Math.max(isAlias(a, b) ? 0.95 : 0, jw(a, b)));
+  // Sound key: names that sound the same get the same key (Sean, Shawn, Shaun → "sn";
+  // Mohammed, Muhammad, Mamadou → "md"). Spelling-to-sound rules first, then the first letter
+  // is kept and later vowels and h, w, y are dropped, and repeated letters are collapsed.
+  function soundKey(t) {
+    let w = t.replace(/^h(?=[aeiou])/, "").replace(/ph/g, "f").replace(/(kh|ck|q|c(?=[aou]|$))/g, "k")
+      .replace(/(sh|ch|c(?=[eiy]))/g, "s").replace(/dj|j/g, "j").replace(/ou/g, "u");
+    const first = w[0] || "";
+    const rest = w.slice(1).replace(/[aeiouhwy]/g, "");
+    return (first + rest).replace(/(.)\1+/g, "$1").replace(/^[aeiou]/, "");
+  }
+  const sameSound = (a, b) => { const ka = soundKey(a), kb = soundKey(b); return ka.length >= 2 && ka === kb && jw(a, b) >= 0.78; };
+  const tokSim = (a, b) => (a === b ? 1 : Math.max(sameSound(a, b) ? 0.92 : 0, jw(a, b)));
 
   // Whole-name similarity. Words both names share exactly (usually the family name) are set
   // aside, so people in one household are compared on the words that differ. A weak word caps
@@ -287,11 +288,10 @@
     const sameGender = !genderKnown || existing.gender === p.gender;
     const ageOk = diffM <= win, ageClose = diffM <= win * 2;
     const idSame = p.idNumber && existing.idNumber && p.idNumber.trim() === existing.idNumber;
-    const mobileSame = p.mobile && existing.mobile && p.mobile.replace(/\D/g, "") === existing.mobile;
 
     let tier = "";
     if (idSame) tier = "Definite";
-    else if ((n >= 0.9 && ageOk && sameGender) || (mobileSame && n >= 0.9)) tier = "Strong";
+    else if ((n >= 0.9 && ageOk && sameGender) ) tier = "Strong";
     // A mismatch lowers the score but never rejects the pair on its own.
     else if ((n - (sameGender ? 0 : 0.05) >= 0.8 && ageClose) || (n >= 0.9 && (ageOk || sameGender))) tier = "Low";
     if (!tier) return null;
@@ -302,7 +302,6 @@
     else if (ageOk) same.push(`Age within ${plural(diffM, "month")}`);
     else diff.push(`Age differs by ${plural(diffM, "month")}`);
     if (genderKnown) (sameGender ? same : diff).push(sameGender ? "Same gender" : "Different gender");
-    if (mobileSame) same.push("Same mobile number");
     if (idSame) same.push("Same ID number");
     // Match percentage for the "N% Match Found" bar: name carries most weight, then age and gender.
     const pct = Math.min(99, Math.round(n * 60 + (diffM === 0 ? 20 : ageOk ? 15 : ageClose ? 5 : 0) + (!genderKnown ? 10 : sameGender ? 20 : 0) - (idSame ? -20 : 0)));
@@ -409,9 +408,11 @@
   function statusChip(p) {
     const chips = [];
     if (p.flag && !p.flagServed) chips.push(`<span class="status-chip chip-warn">${ICON.warn}Needs supervisor check</span>`);
-    if (p.status === "pending") chips.push(`<span class="status-chip chip-pending">${ICON.hourglass}Visit Pending</span>`);
-    if (p.status === "not") chips.push(`<span class="status-chip chip-info">Not Administered</span>`);
-    if (p.status === "done") chips.push(`<span class="status-chip chip-ok">${ICON.tick}Vaccinated</span>`);
+    const served = isServed(p);
+    if (!served && p.status === "pending") chips.push(`<span class="status-chip chip-pending">${ICON.hourglass}Visit Pending</span>`);
+    if (!served && p.status === "not") chips.push(`<span class="status-chip chip-info">Not Administered</span>`);
+    if (served) chips.push(`<span class="status-chip chip-ok">${ICON.tick}Vaccinated</span>`);
+    if (served && p.status !== "done") chips.push(`<span class="status-chip chip-info">Linked Record</span>`);
     if (p.flagServed) chips.push(`<span class="status-chip chip-warn">${ICON.warn}Flagged for supervisor</span>`);
     return chips.length ? `<div class="chip-row">${chips.join("")}</div>` : "";
   }
@@ -553,8 +554,9 @@
       const head = h.members.find(p => p.head) || { name: h.head };
       const card = p => {
         // Already served this round: no Take Action. Show who, when and where, with an option to flag.
+        const served = isServed(p);
         const btn = !isChild(p) ? ""
-          : p.status === "done"
+          : served && !p.deliverBack
             ? `${p.flagServed ? "" : `<button class="btn btn-secondary card-btn" data-action="flag-served" data-id="${p.id}">Flag for Supervisor</button>`}`
           : p.status === "not"
             ? `<button class="btn btn-secondary card-btn" data-action="unable" data-id="${p.id}">Unable to Vaccinate</button>`
@@ -562,12 +564,13 @@
         return `<li><article class="member-card ${p.flag ? "is-flagged" : ""}" aria-labelledby="m-${p.id}">
           <div class="member-top">
             <h3 class="member-name" id="m-${p.id}">${esc(p.name)}</h3>
-            ${p.status === "done" ? "" : `<button class="edit-link" data-action="not-in-prototype" aria-label="Edit ${esc(p.name)}">${ICON.edit}Edit</button>`}
+            ${served ? "" : `<button class="edit-link" data-action="not-in-prototype" aria-label="Edit ${esc(p.name)}">${ICON.edit}Edit</button>`}
           </div>
           <p class="member-sub"><span>${esc(p.gender || "Gender not recorded")}</span><span class="sep" aria-hidden="true"></span><span>${esc(ageLabel(p.age))}</span></p>
           ${statusChip(p)}
-          ${isChild(p) && p.status !== "done" && p.flag ? `<p class="card-warn">${ICON.warn}<span>May be registered twice. Your supervisor will check. You can still vaccinate.</span></p>` : ""}
-          ${isChild(p) && p.status !== "done" && !p.flag && !store.synced ? `<p class="card-warn">${ICON.warn}<span>Sync failed. Recent vaccinations may be missing. Ask the caregiver before you vaccinate.</span></p>` : ""}
+          ${isChild(p) && p.deliverBack ? `<p class="card-warn">${ICON.warn}<span>This vaccination record is flagged as wrong. Ask the caregiver, then vaccinate if needed.</span></p>` : ""}
+          ${isChild(p) && !served && p.flag ? `<p class="card-warn">${ICON.warn}<span>May be registered twice. Your supervisor will check. You can still vaccinate.</span></p>` : ""}
+          ${isChild(p) && !served && !p.flag && !store.synced ? `<p class="card-warn">${ICON.warn}<span>Sync failed. Recent vaccinations may be missing. Ask the caregiver before you vaccinate.</span></p>` : ""}
           ${btn}
         </article></li>`;
       };
@@ -605,7 +608,6 @@
                 ${["Female", "Male"].map(o => `<label class="toggle-opt"><input type="radio" name="p-gender" value="${o}" ${o === p.gender ? "checked" : ""}/><span>${o}</span></label>`).join("")}
               </div>
             </fieldset>
-            ${textField({ id: "p-mobile", label: "Mobile number", value: p.mobile, type: "tel", inputmode: "tel" })}
           </div>
           ${state.compareOpen ? compareDialogHtml() : ""}
           ${state.manyOpen ? manyDialogHtml() : ""}
@@ -724,7 +726,6 @@
       ["Gender", e.gender || "–", p.gender || "–", !!(e.gender && p.gender && e.gender !== p.gender)],
       ["Age", ageLabel(e.age), ageLabel(newAge), e.age !== newAge],
       ["Date of Birth", memberDob(e), fmtDob(p.dob), memberDob(e).slice(3) !== fmtDob(p.dob).slice(3)],
-      ["Mobile Number", e.mobile || "–", p.mobile.replace(/\D/g, "") || "–", !!(e.mobile && p.mobile && e.mobile !== p.mobile.replace(/\D/g, ""))],
       ["ID Number", e.idNumber || "–", p.idType === "Not available" ? "–" : p.idNumber || "–", !!(e.idNumber && p.idNumber && e.idNumber !== p.idNumber)]
     ];
     return `<div class="dialog-backdrop" id="compare-dialog">
@@ -1023,7 +1024,7 @@
     const p = state.person;
     const rec = {
       id: `p-${Date.now()}`, name: p.name.trim(), gender: p.gender, age: personMonths(p), head: p.isHead,
-      mobile: p.mobile.replace(/\D/g, ""), idNumber: p.idType === "Not available" ? "" : p.idNumber.trim(),
+      idNumber: p.idType === "Not available" ? "" : p.idNumber.trim(),
       status: personMonths(p) < 60 ? "pending" : undefined,
       meta: { collector: "You", round: 2, tags: recordTags(), at: new Date().toISOString() },
       ...extra
@@ -1197,20 +1198,17 @@
 
     // W10
     vaccinate() { deliveryAlert = ""; go("checklist"); },
-    "flag-served"(btn) {
-      state.memberId = btn.dataset.id;
-      flagServedOpen = true;
-      render({ focusTitle: false });
-      document.querySelector("#flag-dialog .btn")?.focus();
-    },
+    "flag-served"(btn) { state.memberId = btn.dataset.id; state.flagWhy = ""; go("flagReason"); },
     "close-flag"() { flagServedOpen = false; render({ focusTitle: false }); },
     "flag-confirm"() { flagServedOpen = false; state.flagWhy = ""; go("flagReason"); },
     "flag-submit"() {
       if (!showErrors({ "fr-why": state.flagWhy ? "" : "Select a reason" })) return;
       const p = member();
-      p.flagServed = true; p.flagReason = state.flagWhy; save();
+      p.flagServed = true; p.flagReason = state.flagWhy;
+      p.deliverBack = ["Wrong child marked as vaccinated", "Child was not vaccinated"].includes(state.flagWhy);
+      save();
       backTo("overview");
-      toast("Flagged. Your supervisor will check this record.");
+      toast(p.deliverBack ? "Flagged. Your supervisor will check this record. You can still vaccinate this child." : "Flagged. Your supervisor will check this record.");
     },
     "close-delivery"() { deliveryAlert = ""; render({ focusTitle: false }); },
     hold() {
@@ -1221,7 +1219,7 @@
     },
     "submit-checklist"() {
       const p = member();
-      p.status = "done"; p.servedAt = "Today, " + new Date().toTimeString().slice(0, 5); p.servedBy = "You";
+      p.status = "done"; p.deliverBack = false; p.servedAt = "Today, " + new Date().toTimeString().slice(0, 5); p.servedBy = "You";
       store.progress.completed++;
       queueUpload();
       state.history = state.history.filter(r => r !== "check" && r !== "checklist");
@@ -1248,7 +1246,6 @@
     "p-years": v => (state.person.years = v),
     "p-months": v => (state.person.months = v),
     "p-gender": v => (state.person.gender = v),
-    "p-mobile": v => (state.person.mobile = v),
     "r-why": v => (state.reason.why = v),
     "fr-why": v => (state.flagWhy = v)
   };
