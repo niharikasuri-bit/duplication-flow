@@ -612,8 +612,8 @@
       const item = (m, i) => `<li><article class="xm-card" aria-labelledby="xm-${i}">
           <div class="xm-head">
             <span class="xm-id" id="xm-${i}">ID ${esc(regId(m.member))}</span>
+            <span class="xm-pct">${m.pct}% match</span>
           </div>
-          <ul class="xm-reasons" aria-label="Why this may be the same person">${m.same.map(r => `<li>${esc(r)}</li>`).join("")}${m.diff.map(r => `<li class="is-diff">${esc(r)}</li>`).join("")}</ul>
           <dl class="xm-grid">
             <div><dt>Full name</dt><dd>${esc(m.member.name)}</dd></div>
             <div><dt>Gender</dt><dd>${esc(m.member.gender || "–")}</dd></div>

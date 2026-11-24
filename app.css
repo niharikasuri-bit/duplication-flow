@@ -567,6 +567,7 @@ body { display: flex; align-items: center; justify-content: center; min-height: 
 .xm-card { background: #F5F7FA; border: 1px solid #E3E8EE; border-radius: 8px; overflow: hidden; }
 .xm-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; background: #E4ECEE; }
 .xm-id { font-size: 12px; line-height: 16px; font-weight: 700; color: var(--primary-2); letter-spacing: .02em; white-space: nowrap; }
+.xm-pct { padding: 2px 10px; background: #E5F1EC; border: 1px solid #8DB8A3; border-radius: 999px; font-size: 12px; line-height: 16px; font-weight: 500; color: #1F5E3F; white-space: nowrap; }
 .xm-reasons { list-style: none; display: flex; flex-wrap: wrap; padding: 8px 12px; border-bottom: 1px solid #E3E8EE; background: #E5F1EC; font-size: 12px; line-height: 16px; font-weight: 500; color: #1F5E3F; }
 .xm-reasons li + li::before { content: "·"; margin: 0 6px; color: #8DB8A3; }
 .xm-reasons li.is-diff { color: #707070; font-weight: 400; }
