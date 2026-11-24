@@ -249,14 +249,14 @@
   // Same structure on every review: summary, sync notice, records, people.
   function flagSummary(f) {
     return `<div class="card card-pad">
-        <dl class="kv-rows">
-          <div><dt>Reason</dt><dd class="kv-main">${esc(ISSUE[f.type])}</dd></div>
+        <dl class="flag-kv">
+          <div><dt>Flag ID</dt><dd>${esc(f.id)}</dd></div>
+          <div><dt>Reason</dt><dd>${esc(ISSUE[f.type])}</dd></div>
           ${possibleCause(f)}
           <div><dt>Match</dt><dd>${tierTag(f.tier)}</dd></div>
-          ${f.reason ? `<div><dt>Worker’s reason</dt><dd>${esc(f.reason)}</dd></div>` : ""}
-          <div><dt>Flag ID</dt><dd>${esc(f.id)}</dd></div>
           <div><dt>Area</dt><dd>${esc(f.area)}</dd></div>
           <div><dt>Team</dt><dd>${esc(f.team)}</dd></div>
+          ${f.reason ? `<div><dt>Worker’s reason</dt><dd>${esc(f.reason)}</dd></div>` : ""}
         </dl>
       </div>`;
   }

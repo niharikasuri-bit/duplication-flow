@@ -266,7 +266,7 @@ table.data tr.is-alert td:first-child { box-shadow: inset 3px 0 0 var(--error); 
 /* Review summary: label above value, in a row */
 .review-main > .card + .card, .review-main > .sync-notice + .card { margin-top: 16px; }
 .review-main > .card:first-child { margin-top: 16px; }
-.flag-kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px 24px; }
+.flag-kv { display: flex; flex-wrap: wrap; gap: 16px 48px; }
 .flag-kv dt { font-size: 12px; line-height: 16px; color: var(--text-2); }
 .flag-kv dd { margin-top: 4px; font-size: 16px; line-height: 20px; font-weight: 700; color: var(--primary-2); }
 
@@ -274,7 +274,6 @@ table.data tr.is-alert td:first-child { box-shadow: inset 3px 0 0 var(--error); 
 .cause-val { display: inline-flex; align-items: center; gap: 6px; color: #8A5A00; font-weight: 700; }
 .cause-val svg { width: 18px; height: 18px; flex: 0 0 18px; }
 .cause-sub { display: block; margin-top: 2px; font-size: 13px; line-height: 18px; font-weight: 400; color: #707070; }
-.flag-kv .cause-row { grid-column: span 2; }
 
 /* Summary hierarchy: reason + match, possible cause, then small meta */
 .sum-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
@@ -298,3 +297,6 @@ table.data tr.is-alert td:first-child { box-shadow: inset 3px 0 0 var(--error); 
 .kv-rows dd.kv-main { font-size: 16px; line-height: 20px; font-weight: 700; color: var(--primary-2); }
 .kv-rows dd.kv-cause { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: #8A5A00; }
 .kv-rows dd.kv-cause svg { width: 18px; height: 18px; flex: 0 0 18px; }
+
+.flag-kv dd.kv-cause { display: inline-flex; align-items: center; gap: 6px; color: #8A5A00; }
+.flag-kv dd.kv-cause svg { width: 18px; height: 18px; flex: 0 0 18px; }

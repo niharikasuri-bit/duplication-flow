@@ -217,12 +217,10 @@
   // Header: label on the left, value on the right.
   const flagHead = f => `<div class="card dq-flaghead">
       <dl class="kv-rows">
+        <div><dt>Flag ID</dt><dd>${esc(f.id)}</dd></div>
         <div><dt>Reason</dt><dd class="kv-main">${esc(ISSUE[f.type])}</dd></div>
         ${possibleCause(f)}
         <div><dt>Match</dt><dd>${tierPill(f.tier)}</dd></div>
-        ${f.reason ? `<div><dt>Worker’s reason</dt><dd>${esc(f.reason)}</dd></div>` : ""}
-        <div><dt>Flag ID</dt><dd>${esc(f.id)}</dd></div>
-        ${f.type === "household" ? `<div><dt>Distance</dt><dd>${esc(f.distance)} m apart</dd></div>` : `<div><dt>Household</dt><dd>${esc(f.household)}</dd></div>`}
       </dl>
     </div>`;
   const LEGEND = `<ul class="dq-legend" aria-label="Highlight key"><li class="k-same">Same</li><li class="k-similar">Similar</li><li class="k-diff">Different</li></ul>`;
