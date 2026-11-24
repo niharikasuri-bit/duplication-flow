@@ -67,7 +67,7 @@
     { id: "hh-1", head: "Mohammed Diallo", m: 20, members: [
       { id: "p-11", name: "Mohammed Diallo", gender: "Male", age: Y(34, 2), head: true },
       { id: "p-12", name: "Fatou Diallo", gender: "Female", age: Y(29), mobile: "076123456" },
-      { id: "p-13", name: "Aminata Diallo", gender: "Female", age: Y(3, 2), status: "done", servedAt: "Today, 09:20", servedBy: "A. Sesay", servedWhere: "Solimbo market" },
+      { id: "p-13", name: "Aminata Diallo", gender: "Female", age: Y(3, 2), status: "done", servedAt: "Today, 09:20", servedBy: "A. Sesay", servedWhere: "this household" },
       { id: "p-14", name: "Ibrahima Diallo", gender: "Male", age: Y(0, 8), status: "pending" }
     ] },
     { id: "hh-2", head: "Fatoumata Camara", m: 35, members: [
@@ -114,7 +114,6 @@
     retryWorks: true,
     retryFailed: false,       // a retry has failed → offer Continue Without Sync
     continued: false,         // worker carried on after a failed sync
-    gpsOk: true,
     progress: { completed: 15, target: 80 },
     log: []                   // search terms + candidates shown before a create
   });
@@ -137,7 +136,7 @@
     history: [],
     query: "",
     hhId: null,
-    draftHH: null,            // { head, noGps } while creating a household
+    draftHH: null,            // { head, searchTerm, candidates } while creating a household
     person: blankPerson(),
     matches: [],              // [{ member, tier, same[], diff[] }]
     compareIdx: 0,
@@ -253,8 +252,8 @@
       }
       if (best) out.push({ h, ...best });
     }
-    // exact/starts-with first, then closer spelling, then nearest
-    return out.sort((a, b) => (a.fuzzy - b.fuzzy) || (b.score - a.score) || (a.h.m - b.h.m)).slice(0, 10);
+    // Name closeness only: exact/starts-with first, then closer spelling. No distance at this layer.
+    return out.sort((a, b) => (a.fuzzy - b.fuzzy) || (b.score - a.score)).slice(0, 10);
   }
 
   // ---------- Individual comparison (inside one household) ----------
@@ -393,12 +392,13 @@
   }
 
   // Household card used on search results and in the nearby-household check.
-  function householdCard(h, { matched, fuzzy, q = "", action = "open-hh", label = "Open Household", note = "" } = {}) {
+  // showDistance: only in the nearby-household check (Layer 2); search results are name only.
+  function householdCard(h, { matched, fuzzy, q = "", action = "open-hh", label = "Open Household", note = "", showDistance = false } = {}) {
     const kids = h.members.filter(p => !p.head);
     return `<li><article class="hh-card" aria-labelledby="hh-${h.id}">
       <div class="hh-top">
         <h3 class="hh-name" id="hh-${h.id}">${highlight(h.head, q)}</h3>
-        <span class="hh-dist">${ICON.pin}${h.m < 1000 ? `${h.m} m` : `${(h.m / 1000).toFixed(1)} km`}</span>
+        ${showDistance ? `<span class="hh-dist">${ICON.pin}${h.m} m away</span>` : ""}
       </div>
       <p class="hh-sub">Household head · ${plural(h.members.length, "member")}</p>
       ${kids.length ? `<ul class="hh-members">${kids.map(p => `<li><span>${highlight(p.name, q)}</span><span>${esc(p.gender)}, ${esc(ageLabel(p.age))}</span></li>`).join("")}</ul>` : ""}
@@ -508,25 +508,19 @@
     // W4
     household() {
       const d = state.draftHH;
-      const gps = d.noGps
-        ? notice("info", "Saving without location. Your supervisor checks this household against a wider area.")
-        : store.gpsOk
-          ? `<div class="latlng">
+      const gps = `<div class="latlng">
               <div><label class="field-label" for="hh-lat">Latitude</label><input class="input" id="hh-lat" value="8.48402" readonly /></div>
               <div><label class="field-label" for="hh-lng">Longitude</label><input class="input" id="hh-lng" value="-13.22994" readonly /></div>
             </div>
-            <p class="gps" id="gps-ok">${ICON.gps}Location captured. Accuracy 6 m</p>`
-          : notice("error", "Location not captured. Accuracy reading 48 m. Move to an open area and try again.",
-              `<div class="notice-actions"><button class="btn btn-secondary btn-sm" data-action="retry-gps">${ICON.sync}Retry</button><button class="btn-link" data-action="no-gps">Save Without Location</button></div>`);
+            <p class="gps" id="gps-ok">${ICON.gps}Coordinates captured. Accuracy 6 m</p>`;
       return {
         tag: ASSIGNED_AREA,
         body: `${title("Household Details")}
           <div class="card">
             ${textField({ id: "hh-head", label: "Household head name", value: d.head, required: true })}
             <div class="field" id="hh-loc-group">
-              <p class="field-label">Household location${reqMark(true)}</p>
+              <p class="field-label">Household coordinates</p>
               ${gps}
-              ${errorText("hh-loc", state.errors["hh-loc"])}
             </div>
           </div>
           ${nearbyDialogHtml()}`,
@@ -589,14 +583,11 @@
 
     // W8
     matches() {
-      const alike = (a, b) => nameSim(a.member.name, b.member.name) >= 0.85 && Math.abs(a.member.age - b.member.age) <= 3;
       const item = (m, i) => {
-        const twin = state.matches.find((o, j) => j !== i && alike(m, o));
         return `<li><article class="match-card" aria-labelledby="mc-${i}">
           <h3 class="member-name" id="mc-${i}">${esc(m.member.name)}</h3>
           <p class="member-sub"><span>${esc(m.member.gender || "Gender not recorded")}</span><span class="sep" aria-hidden="true"></span><span>${esc(ageLabel(m.member.age))}</span></p>
           <p class="reasons-line">${esc([...m.same, ...m.diff].join(", "))}</p>
-          ${twin ? `<p class="hint">${ICON.info}Looks like ${esc(twin.member.name)}, also in this household</p>` : ""}
           ${m.member.flag ? `<div class="chip-row"><span class="status-chip chip-warn">${ICON.warn}Needs supervisor check</span></div>` : ""}
           <button class="btn btn-secondary card-btn" data-action="open-compare" data-i="${i}" aria-describedby="mc-${i}">Compare</button>
         </article></li>`;
@@ -767,7 +758,7 @@
           <button class="dialog-close" data-action="close-nearby" aria-label="Close">${ICON.close}</button>
         </div>
         <p class="dialog-desc">${plural(nearby.length, "household")} within ${NEARBY_M} m ${nearby.length === 1 ? "has" : "have"} someone with a similar name.</p>
-        <ul class="hh-list dialog-scroll">${nearby.map(n => householdCard(n.h, { action: "nearby-open", label: "Same Household", note: `Similar name: ${n.matched}` })).join("")}</ul>
+        <ul class="hh-list dialog-scroll">${nearby.map(n => householdCard(n.h, { action: "nearby-open", label: "Same Household", note: `Similar name: ${n.matched}`, showDistance: true })).join("")}</ul>
         <div class="dialog-actions"><button class="btn btn-primary" data-action="nearby-new">No, Create New Household</button></div>
       </div>
     </div>`;
@@ -911,7 +902,7 @@
       const b = document.querySelector(".sys-banner"); if (b && !store.pending && syncOk()) b.remove();
     }, 4000);
   }
-  const recordTags = () => [!syncOk() ? "SYNC_FAILED" : "", state.draftHH?.noGps ? "NO_GPS" : ""].filter(Boolean);
+  const recordTags = () => (syncOk() ? [] : ["SYNC_FAILED"]);
 
   function savePerson(extra = {}) {
     const p = state.person;
@@ -925,7 +916,7 @@
     if (state.draftHH) {
       const d = state.draftHH;
       const id = `hh-${Date.now()}`;
-      store.households.unshift({ id, head: rec.name, m: 0, members: [rec], meta: { noGps: !!d.noGps, searchTerm: d.searchTerm, candidates: d.candidates, tags: recordTags() } });
+      store.households.unshift({ id, head: rec.name, m: 0, lat: 8.48402, lng: -13.22994, accuracy: 6, members: [rec], meta: { searchTerm: d.searchTerm, candidates: d.candidates, tags: recordTags() } });
       state.hhId = id;
       state.draftHH = null;
       queueUpload();
@@ -974,23 +965,17 @@
     "open-hh"(btn) { state.hhId = btn.dataset.id; go("overview"); },
     register() {
       const hits = searchHouseholds(state.query.trim()) || [];
-      state.draftHH = { head: state.query.trim(), noGps: false, searchTerm: state.query.trim(), candidates: hits.map(h => h.h.id) };
+      state.draftHH = { head: state.query.trim(), searchTerm: state.query.trim(), candidates: hits.map(h => h.h.id) };
       store.log.push({ term: state.query.trim(), shown: hits.length, at: new Date().toISOString() }); save();
       nearby = [];
       go("household");
     },
 
     // W4
-    "retry-gps"() { if (store.gpsOk) render({ focusTitle: false }); else toast("Location still not captured. Try again in an open area."); },
-    "no-gps"() { state.draftHH.noGps = true; render({ focusTitle: false }); },
     "hh-continue"() {
       const d = state.draftHH;
-      const ok = showErrors({
-        "hh-head": d.head.trim() ? "" : "Enter the household head name",
-        "hh-loc": store.gpsOk || d.noGps ? "" : "Capture the location, or save without location"
-      });
-      if (!ok) return;
-      nearby = d.noGps ? [] : deviceHouseholds().filter(h => h.m <= NEARBY_M).map(h => {
+      if (!showErrors({ "hh-head": d.head.trim() ? "" : "Enter the household head name" })) return;
+      nearby = deviceHouseholds().filter(h => h.m <= NEARBY_M).map(h => {
         let best = null;
         for (const p of h.members) { const s = nameSim(d.head, p.name); if (s >= 0.8 && (!best || s > best.s)) best = { s, matched: p.name }; }
         return best && { h, ...best };
@@ -1147,7 +1132,6 @@
     demo.querySelector("#demo-sync").value = syncOk() ? "ok" : s.status ? "regFailed" : "failed";
     demo.querySelector("#demo-upload").value = store.upload;
     demo.querySelector("#demo-retry").value = store.retryWorks ? "yes" : "no";
-    demo.querySelector("#demo-gps").value = store.gpsOk ? "yes" : "no";
     demo.querySelector("#demo-pending").textContent = String(store.pending);
   }
   demo?.addEventListener("change", e => {
@@ -1159,7 +1143,6 @@
       if (store.upload === "failed" && !store.pending) store.pending = 3;
     }
     if (e.target.id === "demo-retry") store.retryWorks = e.target.value === "yes";
-    if (e.target.id === "demo-gps") store.gpsOk = e.target.value === "yes";
     save();
     render({ focusTitle: false });
   });
