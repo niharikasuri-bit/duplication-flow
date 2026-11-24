@@ -275,3 +275,16 @@ table.data tr.is-alert td:first-child { box-shadow: inset 3px 0 0 var(--error); 
 .cause-val svg { width: 18px; height: 18px; flex: 0 0 18px; }
 .cause-sub { display: block; margin-top: 2px; font-size: 13px; line-height: 18px; font-weight: 400; color: #707070; }
 .flag-kv .cause-row { grid-column: span 2; }
+
+/* Summary hierarchy: reason + match, possible cause, then small meta */
+.sum-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.sum-reason { font-size: 20px; line-height: 24px; font-weight: 700; color: var(--primary-2); }
+.sum-top > :last-child { flex: 0 0 auto; margin-top: 2px; }
+.sum-cause { margin-top: 8px; display: flex; align-items: center; gap: 6px; font-size: 14px; line-height: 19px; color: #8A5A00; }
+.sum-cause svg { width: 18px; height: 18px; flex: 0 0 18px; }
+.sum-cause b { font-weight: 700; }
+.sum-wreason { margin-top: 6px; font-size: 14px; line-height: 19px; color: var(--text); }
+.sum-meta { margin-top: 12px; padding-top: 12px; border-top: 1px solid #ECECEC; display: flex; flex-wrap: wrap; gap: 8px 24px; }
+.sum-meta > div { display: flex; gap: 6px; align-items: baseline; }
+.sum-meta dt { font-size: 13px; line-height: 18px; color: #707070; }
+.sum-meta dd { font-size: 13px; line-height: 18px; font-weight: 500; color: var(--text); }

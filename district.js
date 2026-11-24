@@ -205,9 +205,8 @@
   const lastSync = s => { const m = /Last succeeded (.+)$/.exec(String(s || "")); return m ? m[1] : ""; };
   // Why the flag might have happened: shown in the summary, under the reason.
   function possibleCause(f) {
-    const failed = f.type === "delivery" ? f.deliveries.map((d, i) => d.failed ? [i + 1, d.sync] : null).filter(Boolean) : f.syncFailed ? [[2, f.b.sync]] : [];
-    if (!failed.length) return "";
-    return failed.map(([n, sync]) => `<div class="cause-row"><dt>Possible cause</dt><dd><span class="cause-val"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>Sync failed for record ${n}</span></dd></div>`).join("");
+    const failed = f.type === "delivery" ? f.deliveries.map((d, i) => d.failed ? i + 1 : null).filter(Boolean) : f.syncFailed ? [2] : [];
+    return failed.map(n => `<p class="sum-cause"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg><span>Possible cause: <b>Sync failed for record ${n}</b></span></p>`).join("");
   }
   function syncNotice(f) {
     const items = f.type === "delivery"
@@ -216,14 +215,13 @@
     return items.map(([n, t]) => `<div class="sync-notice" role="note"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg><div><p class="sync-notice-title">Record ${n}: sync failed</p><p>${esc(t)}</p></div></div>`).join("");
   }
   // Header: label on the left, value on the right.
-  const flagHead = f => `<div class="card dq-flaghead">
-      <dl class="dq-kv">
+  const flagHead = f => `<div class="card sum">
+      <div class="sum-top"><p class="sum-reason">${esc(ISSUE[f.type])}</p>${tierPill(f.tier)}</div>
+      ${possibleCause(f)}
+      ${f.reason ? `<p class="sum-wreason">Worker’s reason: ${esc(f.reason)}</p>` : ""}
+      <dl class="sum-meta">
         <div><dt>Flag ID</dt><dd>${esc(f.id)}</dd></div>
-        <div><dt>Reason</dt><dd>${esc(ISSUE[f.type])}</dd></div>
-        ${possibleCause(f)}
-        <div><dt>Match</dt><dd>${tierPill(f.tier)}</dd></div>
         ${f.type === "household" ? `<div><dt>Distance</dt><dd>${esc(f.distance)} m apart</dd></div>` : `<div><dt>Household</dt><dd>${esc(f.household)}</dd></div>`}
-        ${f.reason ? `<div><dt>Worker’s reason</dt><dd>${esc(f.reason)}</dd></div>` : ""}
       </dl>
     </div>`;
   const LEGEND = `<ul class="dq-legend" aria-label="Highlight key"><li class="k-same">Same</li><li class="k-similar">Similar</li><li class="k-diff">Different</li></ul>`;
