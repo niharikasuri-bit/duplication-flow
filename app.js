@@ -521,10 +521,10 @@
             </div>
             <div class="field coords-field">
               <p class="field-label">Household coordinates</p>
-              <dl class="coords secondary-container">
-                <div><dt>Latitude</dt><dd>8.48402</dd></div>
-                <div><dt>Longitude</dt><dd>-13.22994</dd></div>
-              </dl>
+              <div class="latlng">
+                <div><label class="field-label" for="hh-lat">Latitude</label><input class="input" id="hh-lat" value="8.48402" disabled /></div>
+                <div><label class="field-label" for="hh-lng">Longitude</label><input class="input" id="hh-lng" value="-13.22994" disabled /></div>
+              </div>
               <p class="gps">${ICON.gps}Captured automatically. Accuracy 6 m</p>
             </div>
           </div>`,

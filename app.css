@@ -515,9 +515,13 @@ body { display: flex; align-items: center; justify-content: center; min-height: 
 .card #p-idnumber-wrap > .field { margin-top: 16px; }
 .body-household .card { padding: 16px 16px 20px; }
 .body-household .card .field + .field { margin-top: 24px; }
-.counter { display: inline-flex; align-items: stretch; height: 40px; border: 1px solid var(--input-border); background: var(--paper); }
+.counter { display: flex; width: 100%; align-items: stretch; height: 40px; border: 1px solid var(--input-border); background: var(--paper); }
+.counter .counter-input { flex: 1 1 auto; width: auto; min-width: 0; }
 .counter.invalid { border: 2px solid var(--error); }
-.counter-btn { width: 44px; display: grid; place-items: center; background: var(--paper-2); color: var(--primary-1); }
+.counter-btn { width: 48px; flex: 0 0 48px; display: grid; place-items: center; background: var(--paper-2); color: var(--text); }
+.input:disabled { background: #EEEEEE; color: var(--text-2); border-color: #C5C5C5; cursor: not-allowed; -webkit-text-fill-color: var(--text-2); opacity: 1; }
+.coords-field .latlng { margin-top: 0; }
+.coords-field .latlng .field-label { font-size: 14px; line-height: 19px; color: var(--text-2); }
 .counter-btn svg { width: 20px; height: 20px; }
 .counter-btn:disabled { color: #C5C5C5; cursor: not-allowed; }
 .counter-input { width: 64px; border: 0; border-left: 1px solid var(--input-border); border-right: 1px solid var(--input-border); text-align: center; font-size: 16px; font-weight: 500; color: var(--text); background: var(--paper); }
