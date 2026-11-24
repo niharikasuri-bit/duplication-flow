@@ -387,22 +387,87 @@
       <button class="link toggle-table" data-action="toggle-table" data-key="${key}">${asTable ? "Show as Chart" : "Show as Table"}</button>
     </div>`;
   }
-  function viewInsights() {
-    const per = v => v.toFixed(1), pct = v => `${v}%`;
-    return `${crumbs([["Home", "index.html"], ["Insights"]])}
-      ${head("Insights", "See where duplicates come from, by team, area and collector, and why they happen. Use this to plan support and training for this round.")}
-      ${stats([["18.4", "Duplicates per 1,000 registrations"], ["23", "Confirmed duplicates"], ["7%", "Registrations after a failed sync", true], ["2", "Double deliveries"]])}
-      <div class="insight-grid" style="margin-top:0">
+  // ---------- S5 Duplication Dashboard ----------
+  // Palette: first five categorical slots of the dataviz reference palette (validated: adjacent CVD ΔE 9.1,
+  // normal-vision 19.6). Three slots sit under 3:1 on white, so every slice has a labelled legend row and a table view.
+  const SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4"];
+  const TREND = [["Day 1", 9.8], ["Day 2", 12.4], ["Day 3", 21.7], ["Day 4", 24.9], ["Day 5", 19.2], ["Day 6", 16.0], ["Day 7", 14.1]];
+
+  function donutCard(key, title, sub, data, unit) {
+    const total = data.reduce((s, d) => s + d[1], 0);
+    const R = 70, r = 44, C = 90;
+    let a0 = -Math.PI / 2;
+    const arcs = data.map(([label, v], i) => {
+      const a1 = a0 + (v / total) * Math.PI * 2;
+      const large = a1 - a0 > Math.PI ? 1 : 0;
+      const p = (rad, ang) => `${(C + rad * Math.cos(ang)).toFixed(2)} ${(C + rad * Math.sin(ang)).toFixed(2)}`;
+      const path = `M ${p(R, a0)} A ${R} ${R} 0 ${large} 1 ${p(R, a1)} L ${p(r, a1)} A ${r} ${r} 0 ${large} 0 ${p(r, a0)} Z`;
+      a0 = a1;
+      const pct = Math.round((v / total) * 100);
+      return `<path class="slice" d="${path}" fill="${SERIES[i]}" tabindex="0" data-tip="${esc(label)}: ${v} ${esc(unit)} (${pct}%)"><title>${esc(label)}: ${v} (${pct}%)</title></path>`;
+    }).join("");
+    const legend = data.map(([label, v], i) => `<li><span class="sw" style="background:${SERIES[i]}"></span><span class="lg-label">${esc(label)}</span><span class="lg-val">${v}</span><span class="lg-pct">${Math.round((v / total) * 100)}%</span></li>`).join("");
+    const body = ui.tables[key]
+      ? `<table class="cmp"><thead><tr><th scope="col">Item</th><th scope="col">${esc(unit)}</th><th scope="col">Share</th></tr></thead><tbody>${data.map(([l, v]) => `<tr><th scope="row" style="color:var(--text)">${esc(l)}</th><td>${v}</td><td>${Math.round((v / total) * 100)}%</td></tr>`).join("")}</tbody></table>`
+      : `<div class="donut-wrap">
+          <svg class="donut" viewBox="0 0 180 180" role="img" aria-label="${esc(title)}">${arcs}
+            <text x="90" y="86" text-anchor="middle" class="donut-total">${total}</text>
+            <text x="90" y="106" text-anchor="middle" class="donut-unit">${esc(unit)}</text>
+          </svg>
+          <ul class="legend">${legend}</ul>
+        </div>`;
+    return `<div class="card card-pad chart-card">
+      <h2 class="card-title">${esc(title)}</h2>
+      <p class="card-sub">${esc(sub)}</p>
+      ${body}
+      <button class="link toggle-table" data-action="toggle-table" data-key="${key}">${ui.tables[key] ? "Show as Chart" : "Show as Table"}</button>
+    </div>`;
+  }
+
+  function trendCard() {
+    const W = 520, H = 200, L = 36, B = 28, T = 12, Rr = 12;
+    const max = 30, xs = i => L + (i * (W - L - Rr)) / (TREND.length - 1), ys = v => T + (1 - v / max) * (H - T - B);
+    const grid = [0, 10, 20, 30].map(g => `<line x1="${L}" x2="${W - Rr}" y1="${ys(g)}" y2="${ys(g)}" class="grid"/><text x="${L - 8}" y="${ys(g) + 4}" text-anchor="end" class="axis">${g}</text>`).join("");
+    const line = TREND.map(([, v], i) => `${i ? "L" : "M"} ${xs(i).toFixed(1)} ${ys(v).toFixed(1)}`).join(" ");
+    const pts = TREND.map(([d, v], i) => `<g class="pt" tabindex="0" data-tip="${d}: ${v} per 1,000"><rect x="${xs(i) - 22}" y="${T}" width="44" height="${H - T - B}" class="hit"/><circle cx="${xs(i)}" cy="${ys(v)}" r="4"/><text x="${xs(i)}" y="${H - 8}" text-anchor="middle" class="axis">${d}</text><title>${d}: ${v} per 1,000 registrations</title></g>`).join("");
+    const body = ui.tables.trend
+      ? `<table class="cmp"><thead><tr><th scope="col">Day</th><th scope="col">Per 1,000 registrations</th></tr></thead><tbody>${TREND.map(([d, v]) => `<tr><th scope="row" style="color:var(--text)">${d}</th><td>${v.toFixed(1)}</td></tr>`).join("")}</tbody></table>`
+      : `<svg class="trend" viewBox="0 0 ${W} ${H}" role="img" aria-label="Duplicates per 1,000 registrations by day, round 2">${grid}<path d="${line}" class="trend-line"/>${pts}</svg>`;
+    return `<div class="card card-pad chart-card">
+      <h2 class="card-title">Duplicates over the round</h2>
+      <p class="card-sub">Confirmed duplicates per 1,000 registrations, by day of round 2.</p>
+      ${body}
+      <button class="link toggle-table" data-action="toggle-table" data-key="trend">${ui.tables.trend ? "Show as Chart" : "Show as Table"}</button>
+    </div>`;
+  }
+
+  function viewDashboard() {
+    const per = v => v.toFixed(1);
+    const open = store.flags.filter(f => f.status === "Open");
+    const issues = [["Possible duplicate person", open.filter(f => f.type === "individual").length], ["Possible duplicate household", open.filter(f => f.type === "household").length], ["Possible double vaccination", open.filter(f => f.type === "delivery").length]].filter(d => d[1] > 0);
+    const kpi = (n, l, note, alert) => `<div class="kpi ${alert ? "is-alert" : ""}"><span class="kpi-num">${n}</span><span class="kpi-label">${l}</span><span class="kpi-note">${note}</span></div>`;
+    return `${crumbs([["Home", "index.html"], ["Duplication Dashboard"]])}
+      ${head("Duplication Dashboard", "See how many duplicates are found, where they come from and why. Use this to plan support and training for this round.", `<a class="btn btn-primary" href="#/flags">Go to Flag Queue</a>`)}
+      <div class="kpis">
+        ${kpi("18.4", "Duplicates per 1,000 registrations", "Round 2")}
+        ${kpi("23", "Confirmed duplicates", "Round 2")}
+        ${kpi(open.length, "Flags to review", `${open.filter(f => f.type === "delivery").length} possible double vaccinations`, true)}
+        ${kpi("7%", "Registrations after a failed sync", "Of all registrations this round")}
+      </div>
+      <div class="dash-grid">
+        ${donutCard("cause", "Duplicates by root cause", "Confirmed duplicates this round, by the root cause tagged in review.", [["Sync failed", 9], ["Spelling", 6], ["Info mismatch", 4], ["Area overlap", 3], ["Other", 1]], "duplicates")}
+        ${donutCard("issue", "Flags to review by issue", "Open flags in the queue right now.", issues, "flags")}
+        ${trendCard()}
         ${barCard("team", "Duplicates by team", "Confirmed duplicates per 1,000 registrations, round 2.", "Per 1,000 registrations", per)}
         ${barCard("area", "Duplicates by area", "Confirmed duplicates per 1,000 registrations, round 2.", "Per 1,000 registrations", per)}
         ${barCard("collector", "Duplicates by collector", "Confirmed duplicates per 1,000 registrations, round 2.", "Per 1,000 registrations", per)}
-        ${barCard("cause", "Duplicates by root cause", "Share of confirmed duplicates by the root cause tagged in review.", "Share of confirmed duplicates", pct)}
       </div>
+      <div class="chart-tip" id="chart-tip" role="tooltip" hidden></div>
       <p class="chart-note">Figures are demo data for the prototype.</p>`;
   }
 
   // ---------- Router ----------
-  const TITLES = { flags: "Flag Queue", aliases: "Alias Map", insights: "Insights" };
+  const TITLES = { flags: "Flag Queue", aliases: "Alias Map", dashboard: "Duplication Dashboard", insights: "Duplication Dashboard" };
   function route() {
     const parts = (location.hash.replace(/^#\/?/, "") || "flags").split("/");
     const section = TITLES[parts[0]] ? parts[0] : "flags";
@@ -411,10 +476,10 @@
       const f = store.flags.find(x => x.id === parts[1]);
       if (f) { html = f.type === "delivery" ? viewAlert(f) : viewReview(f); title = f.type === "delivery" ? "Review Delivery Alert" : "Review Possible Duplicate"; }
     }
-    if (!html) html = { flags: viewFlags, aliases: viewAliases, insights: viewInsights }[section]();
+    if (!html) html = { flags: viewFlags, aliases: viewAliases, dashboard: viewDashboard, insights: viewDashboard }[section]();
     $page.innerHTML = html;
     document.title = `${title} – Duplication Flow`;
-    document.querySelectorAll(".sidenav a").forEach(a => (a.dataset.nav === section ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current")));
+    document.querySelectorAll(".sidenav a").forEach(a => (a.dataset.nav === (section === "insights" ? "dashboard" : section) ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current")));
     window.scrollTo(0, 0);
     $page.focus({ preventScroll: true });
   }
@@ -446,6 +511,22 @@
       toast({ Confirmed: f.type === "delivery" ? `${f.id} confirmed as a double delivery.` : `${f.id} confirmed as a duplicate. The records are linked.`, "Not a duplicate": `${f.id} marked not a duplicate. It won’t be raised again.` }[decision]);
     }
   });
+  function showTip(el, x, y) {
+    const tip = document.getElementById("chart-tip");
+    if (!tip) return;
+    tip.textContent = el.dataset.tip; tip.hidden = false;
+    tip.style.left = `${x + 12}px`; tip.style.top = `${y + 12}px`;
+  }
+  document.addEventListener("mousemove", e => {
+    const el = e.target.closest("[data-tip]");
+    const tip = document.getElementById("chart-tip");
+    if (el) showTip(el, e.clientX, e.clientY); else if (tip) tip.hidden = true;
+  });
+  document.addEventListener("focusin", e => {
+    const el = e.target.closest("[data-tip]");
+    if (el) { const r = el.getBoundingClientRect(); showTip(el, r.left + r.width / 2, r.top); }
+  });
+
   document.addEventListener("input", e => {
     const map = { "f-q": "q", "f-area": "area", "f-team": "team", "f-collector": "collector" };
     if (map[e.target.id]) { ui[map[e.target.id]] = e.target.value; refreshQueue(); }
