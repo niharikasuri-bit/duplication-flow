@@ -193,39 +193,31 @@
     return k === "similar" ? "similar" : "diff";
   }
   const KIND_LABEL = { same: "Same", similar: "Similar", diff: "Different" };
-  function compareRows(rows, la = "A", lb = "B") {
-    return rows.map(([label, a, b, k]) => {
-      const m = kind(a, b, k);
-      return `<div class="cmp-row">
-          <p class="cmp-label">${esc(label)}${m ? `<span class="cmp-kind k-${m}">${KIND_LABEL[m]}</span>` : ""}</p>
-          <div class="cmp-pair">
-            <div class="cmp-box"><span class="cmp-side">${la}</span>${esc(a)}</div>
-            <div class="cmp-box ${m ? `k-${m}` : ""}"><span class="cmp-side">${lb}</span>${esc(b)}</div>
-          </div>
-        </div>`;
-    }).join("");
+  // Same table as the worker app's Possible Match Found alert: field | A | B, differences highlighted.
+  function compareTable(rows, ha, hb, caption) {
+    return `<table class="pm-table dq-table">
+        <caption class="sr-only">${esc(caption)}</caption>
+        <thead><tr><th scope="col"><span class="sr-only">Field</span></th><th scope="col">${ha}</th><th scope="col">${hb}</th></tr></thead>
+        <tbody>${rows.map(([l, a, b, k]) => { const d = kind(a, b, k) && kind(a, b, k) !== "same"; return `<tr class="${d ? "is-diff" : ""}"><th scope="row">${esc(l)}</th><td>${esc(a)}</td><td>${esc(b)}${d ? '<span class="sr-only"> (different)</span>' : ""}</td></tr>`; }).join("")}</tbody>
+      </table>`;
   }
+  // Header: flag ID left, match tier right, reason below.
+  const flagHead = f => `<div class="card dq-flaghead">
+      <div class="dq-head"><span class="dq-id">${esc(f.id)}</span>${tierPill(f.tier)}</div>
+      <p class="dq-issue">${esc(ISSUE[f.type])}</p>
+      ${f.syncFailed || (f.deliveries || []).some(d => d.failed) ? `<p class="dq-sync">${f.type === "delivery" ? "One vaccination was recorded after a failed sync." : "Record B was created after a failed sync."}</p>` : ""}
+      ${f.reason ? `<p class="dq-wreason">Worker’s reason: ${esc(f.reason)}</p>` : ""}
+    </div>`;
+  const doneCard = f => f.status !== "Open" ? `<div class="card dq-done">${statusPill(f.status)}<p>Root cause: ${esc(f.rootCause || "–")}</p>${f.comment ? `<p>${esc(f.comment)}</p>` : ""}</div>` : "";
+
   function reviewDelivery(f) {
     const done = f.status !== "Open", [d1, d2] = f.deliveries;
-    const rows = [["Child", d1.person || f.title, d2.person || f.title, "similar"], ["Time", d1.time, d2.time, false], ["Household coordinates", d1.coords, d2.coords, false], ["Device sync", d1.sync, d2.sync, false]];
+    const rows = [["Child", d1.person || f.title, d2.person || f.title, "similar"], ["Age", f.age, f.age], ["Household", f.household, f.household], ["Time", d1.time, d2.time, false], ["Household coordinates", d1.coords, d2.coords, false], ["Device sync", d1.sync, d2.sync, false]];
     return {
       title: "Review Double Vaccination",
-      desc: "The same child may have been vaccinated twice this round. Check both vaccinations, then decide.",
-      body: `<div class="card dq-summary">
-          <dl class="dq-fields">
-            <div><dt>Flag ID</dt><dd>${esc(f.id)}</dd></div>
-            <div><dt>Match</dt><dd>${tierPill(f.tier)}</dd></div>
-            <div><dt>Child</dt><dd>${esc(f.title)}</dd></div>
-            <div><dt>Age</dt><dd>${esc(f.age)}</dd></div>
-            <div><dt>Household</dt><dd>${esc(f.household)}</dd></div>
-            <div><dt>Round</dt><dd>${esc(f.round)}</dd></div>
-          </dl>
-          ${f.deliveries.some(d => d.failed) ? `<p class="dq-sync">One vaccination was recorded after a failed sync.</p>` : ""}
-        </div>
-        ${f.note ? `<div class="dq-info dq-reason"><span class="dq-label">Why this was flagged</span><span class="dq-value">${esc(f.note)}</span></div>` : ""}
-        <h2 class="dq-section">Vaccinations</h2>
-        <div class="card dq-compare"><p class="dq-ab"><span>A · Vaccination 1</span><span>B · Vaccination 2</span></p>${compareRows(rows)}</div>
-        ${done ? `<div class="card dq-done">${statusPill(f.status)}<p>Root cause: ${esc(f.rootCause || "–")}</p>${f.comment ? `<p>${esc(f.comment)}</p>` : ""}</div>` : ""}`,
+      body: `${flagHead(f)}
+        ${compareTable(rows, "Vaccination 1", "Vaccination 2", "Both vaccinations compared")}
+        ${doneCard(f)}`,
       footer: done ? "" : `<button class="btn btn-primary" data-action="decide" data-d="Confirmed">Confirm Double Vaccination</button>
         <button class="btn btn-secondary" data-action="decide" data-d="Not a duplicate">Not a Duplicate</button>`
     };
@@ -234,37 +226,22 @@
     if (flag().type === "delivery") return reviewDelivery(flag());
     const f = flag(), isHH = f.type === "household", done = f.status !== "Open";
     const rows = isHH
-      ? [["Household head", f.a.head, f.b.head, "similar"], ["Number of members", f.a.members, f.b.members], ["Household coordinates", f.a.coords, f.b.coords, false], ["Created", f.a.at, f.b.at, false], ["Sync at creation", f.a.sync, f.b.sync, false]]
-      : [["Full name", f.a.name, f.b.name, "similar"], ["Gender", f.a.gender, f.b.gender], ["Age", f.a.age, f.b.age, "similar"], ["Date of birth", f.a.dob, f.b.dob, "similar"], ["ID number", f.a.idNo, f.b.idNo], ["Created", f.a.at, f.b.at, false]];
+      ? [["Household head", f.a.head, f.b.head, "similar"], ["Number of members", f.a.members, f.b.members], ["Distance", "–", `${f.distance} m from A`, false], ["Household coordinates", f.a.coords, f.b.coords, false], ["Created", f.a.at, f.b.at, false], ["Sync at creation", f.a.sync, f.b.sync, false]]
+      : [["Full name", f.a.name, f.b.name, "similar"], ["Gender", f.a.gender, f.b.gender], ["Age", f.a.age, f.b.age, "similar"], ["Date of birth", f.a.dob, f.b.dob, "similar"], ["ID number", f.a.idNo, f.b.idNo], ["Household", f.household, f.household], ["Created", f.a.at, f.b.at, false]];
     const parse = s => { if (!s || s === "–") return null; const [name, g, age] = s.split(", "); return { name, gender: { F: "Female", M: "Male" }[g] || g, age }; };
     const people = isHH ? (f.pairs || []).map((p, i) => {
       const a = parse(p.a), b = parse(p.b);
-      return `<article class="dq-sub">
+      return `<div class="dq-person">
           <div class="dq-head"><h3 class="dq-subtitle">Person ${i + 1}</h3>${p.match ? tierPill(p.match) : `<span class="dq-pill st-none">No match</span>`}</div>
-          ${b ? compareRows([["Name", a.name, b.name, "similar"], ["Gender", a.gender, b.gender], ["Age", a.age, b.age, "similar"]])
-              : compareRows([["Name", a.name, "–", false], ["Age", a.age, "–", false]])}
-        </article>`;
+          ${compareTable(b ? [["Name", a.name, b.name, "similar"], ["Gender", a.gender, b.gender], ["Age", a.age, b.age, "similar"]] : [["Name", a.name, "–", false], ["Gender", a.gender, "–", false], ["Age", a.age, "–", false]], "Household A", "Household B", `Person ${i + 1} in both households`)}
+        </div>`;
     }).join("") : "";
     return {
       title: "Review Possible Duplicate",
-      desc: isHH ? "Two households close to each other may be the same. Compare them, then decide." : "Two people in the same household may be the same person. Compare them, then decide.",
-      body: `<div class="card dq-summary">
-          <dl class="dq-fields">
-            <div><dt>Flag ID</dt><dd>${esc(f.id)}</dd></div>
-            <div><dt>Match</dt><dd>${tierPill(f.tier)}</dd></div>
-            <div><dt>Issue</dt><dd>${esc(ISSUE[f.type])}</dd></div>
-            ${isHH ? `<div><dt>Distance</dt><dd>${ICON.pin}${esc(f.distance)} m apart</dd></div>` : `<div><dt>Household</dt><dd>${esc(f.household)}</dd></div>`}
-            <div><dt>Area</dt><dd>${esc(f.area)}</dd></div>
-            <div><dt>Team</dt><dd>${esc(f.team)}</dd></div>
-          </dl>
-          ${f.syncFailed ? `<p class="dq-sync">Record B was created after a failed sync.</p>` : ""}
-        </div>
-        ${f.reason ? `<div class="dq-info dq-reason"><span class="dq-label">Worker’s reason</span><span class="dq-value">${esc(f.reason)}</span></div>` : ""}
-        <h2 class="dq-section">${isHH ? "Households" : "Records"}</h2>
-        <ul class="dq-legend" aria-label="Highlight key"><li class="k-same">Same</li><li class="k-similar">Similar</li><li class="k-diff">Different</li></ul>
-        <div class="card dq-compare"><p class="dq-ab"><span>A · ${esc(f.a.id)}</span><span>B · ${esc(f.b.id)}</span></p>${compareRows(rows)}</div>
+      body: `${flagHead(f)}
+        ${compareTable(rows, `Record A<span class="pm-id">ID ${esc(f.a.id)}</span>`, `Record B<span class="pm-id">ID ${esc(f.b.id)}</span>`, "Record A compared with record B")}
         ${isHH ? `<h2 class="dq-section">People in both households</h2>${people}` : ""}
-        ${done ? `<div class="card dq-done">${statusPill(f.status)}<p>Root cause: ${esc(f.rootCause || "–")}</p>${f.comment ? `<p>${esc(f.comment)}</p>` : ""}</div>` : ""}`,
+        ${doneCard(f)}`,
       footer: done ? "" : `<button class="btn btn-primary" data-action="decide" data-d="Confirmed">Confirm Duplicate</button>
         <button class="btn btn-secondary" data-action="decide" data-d="Not a duplicate">Not a Duplicate</button>`
     };

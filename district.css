@@ -98,3 +98,11 @@
 .dq-split > div:first-child { padding-left: 0; }
 .dq-split dd { font-size: 20px; line-height: 24px; font-weight: 700; color: var(--text); }
 .dq-split dt { font-size: 12px; line-height: 16px; color: #505A5F; }
+
+/* Review header and popup-style comparison table */
+.dq-flaghead { margin-top: 16px; }
+.dq-issue { margin-top: 8px; font-size: 16px; line-height: 22px; font-weight: 700; color: var(--primary-2); }
+.dq-wreason { margin-top: 6px; font-size: 14px; line-height: 19px; color: #505A5F; }
+.dq-table { margin-top: 16px; background: var(--paper); }
+.dq-person { margin-top: 16px; }
+.dq-person .dq-table { margin-top: 8px; }
