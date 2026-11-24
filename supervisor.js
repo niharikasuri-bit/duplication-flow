@@ -519,7 +519,7 @@
     const issues = [["Possible duplicate person", open.filter(f => f.type === "individual").length], ["Possible duplicate household", open.filter(f => f.type === "household").length], ["Possible double vaccination", open.filter(f => f.type === "delivery").length], ["Vaccination record flagged", open.filter(f => f.type === "vaccination").length]].filter(d => d[1] > 0);
     const kpi = (n, l, note, alert) => `<div class="kpi ${alert ? "is-alert" : ""}"><span class="kpi-num">${n}</span><span class="kpi-label">${l}</span><span class="kpi-note">${note}</span></div>`;
     return `${crumbs([["Home", "index.html"], ["Duplication Dashboard"]])}
-      ${head("Duplication Dashboard", "See how many duplicates are found, where they come from and why. Use this to plan support and training for this round.", DASH_ONLY ? "" : `<a class="btn btn-primary" href="#/flags">Go to Flag Queue</a>`)}
+      ${head("Duplication Dashboard", "See how many duplicates are found, where they come from and why. Use this to plan support and training for this round.", `<a class="btn btn-primary" href="#/flags">Go to Flag Queue</a>`)}
       <div class="kpis">
         ${kpi("18.4", "Duplicates per 1,000 registrations", "Round 2")}
         ${kpi("23", "Confirmed duplicates", "Round 2")}
@@ -539,18 +539,16 @@
   }
 
   // ---------- Router ----------
-  const TITLES = { flags: "Flag Queue", aliases: "Alias Map", dashboard: "Duplication Dashboard", insights: "Duplication Dashboard" };
-  // Dashboard role (dashboard.html): view-only, the dashboard is the only screen.
-  const DASH_ONLY = document.body.dataset.role === "dashboard";
+  const TITLES = { flags: "Flag Queue" };
   function route() {
-    const parts = DASH_ONLY ? ["dashboard"] : (location.hash.replace(/^#\/?/, "") || "flags").split("/");
+    const parts = (location.hash.replace(/^#\/?/, "") || "flags").split("/");
     const section = TITLES[parts[0]] ? parts[0] : "flags";
     let html, title = TITLES[section];
     if (section === "flags" && parts[1]) {
       const f = store.flags.find(x => x.id === parts[1]);
       if (f) { html = f.type === "delivery" ? viewAlert(f) : f.type === "vaccination" ? viewWorkerFlag(f) : viewReview(f); title = f.type === "delivery" ? "Review Delivery Alert" : f.type === "vaccination" ? "Review Flagged Vaccination" : "Review Possible Duplicate"; }
     }
-    if (!html) html = ({ flags: viewFlags, dashboard: viewDashboard, insights: viewDashboard }[section] || viewFlags)();
+    if (!html) html = viewFlags();
     $page.innerHTML = html;
     document.title = `${title} – Duplication Flow`;
     document.querySelectorAll(".sidenav a").forEach(a => (a.dataset.nav === (section === "insights" ? "dashboard" : section) ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current")));

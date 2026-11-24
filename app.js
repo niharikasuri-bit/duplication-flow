@@ -425,7 +425,7 @@
       <div class="hh-top">
         <h3 class="hh-name" id="hh-${h.id}">${h.head === matched ? highlight(h.head, q) : esc(h.head)}</h3>
         ${tagFor(h.head)}
-        ${showDistance ? `<span class="hh-dist">${ICON.pin}${h.m} m away</span>` : ""}
+        ${showDistance ? `<span class="hh-dist">${ICON.pin}${h.m} m away</span>` : h.m <= NEARBY_M ? `<span class="hh-dist">${ICON.pin}Nearby</span>` : ""}
       </div>
       <p class="hh-sub">Household head · ${plural(h.members.length, "member")}</p>
       ${kids.length ? `<ul class="hh-members${showDistance ? " secondary-container" : ""}">${kids.map(p => `<li class="${p.name === matched ? "is-match" : ""}"><span class="hh-member-name">${p.name === matched ? highlight(p.name, q) : esc(p.name)}${tagFor(p.name)}</span><span>${esc(p.gender)}, ${esc(ageLabel(p.age))}</span></li>`).join("")}</ul>` : ""}
