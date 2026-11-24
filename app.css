@@ -575,6 +575,31 @@ body { display: flex; align-items: center; justify-content: center; min-height: 
 .xm-actions { padding: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .xm-compare { font-size: 14px; }
 
+/* ---------- Alert dialog: same component as settlement-apk "Settlement Already Exists" ---------- */
+.dialog.alert { position: relative; border-radius: 4px; padding: 32px 16px 16px; text-align: center; box-shadow: 0 8px 24px rgba(0, 0, 0, .2); max-height: calc(100% - 32px); overflow-y: auto; }
+.dialog.alert .dialog-close { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; margin: 0; display: grid; place-items: center; color: #505A5F; }
+.dialog.alert .dialog-close svg { width: 20px; height: 20px; }
+.dialog-icon { display: block; width: 48px; height: 44px; margin: 0 auto 16px; }
+.dialog.alert .dialog-title { display: block; font-family: 'Roboto', sans-serif; font-size: 24px; line-height: 27px; font-weight: 700; color: var(--primary-2); }
+.dialog.alert .dialog-desc { margin: 8px 0 24px; font-size: 16px; line-height: 22px; color: var(--text); }
+.dialog.alert .dialog-desc strong { font-weight: 700; }
+.dialog.alert .dialog-actions { margin-top: 0; display: flex; flex-direction: column; gap: 12px; }
+.alert-reasons { list-style: none; margin: -8px 0 16px; display: flex; flex-direction: column; gap: 6px; text-align: left; font-size: 14px; line-height: 19px; color: var(--text); }
+.alert-reasons li { display: flex; gap: 8px; align-items: center; }
+.alert-reasons svg { width: 18px; height: 18px; flex: 0 0 18px; color: #9E5F00; }
+.alert-reasons li.is-diff { color: var(--text-2); }
+.alert-reasons li.is-diff svg { color: #0057BD; }
+.dialog.alert .pm-table { margin: 0 0 24px; background: var(--paper); border: 1px solid var(--border); border-radius: 4px; }
+.dialog.alert .pm-table th, .dialog.alert .pm-table td { border-bottom-color: var(--border); }
+.dialog.alert .pm-table thead th { background: var(--paper-2); color: var(--primary-2); text-transform: none; letter-spacing: 0; font-size: 12px; }
+.dialog.alert .pm-table tbody th { color: var(--text-2); font-weight: 400; }
+/* Actions stay visible when the alert content scrolls */
+.dialog.alert .dialog-actions { position: sticky; bottom: -16px; margin: 0 -16px -16px; padding: 12px 16px 16px; background: var(--paper); }
+#quick-dialog .dialog-actions { position: static; margin: 0; padding: 0; }
+#quick-dialog .btn { height: auto; min-height: 40px; padding: 8px 12px; font-size: 16px; line-height: 22px; }
+.alert-list { text-align: left; margin-bottom: 24px; }
+.alert-list .hh-card { border: 1px solid var(--border); box-shadow: none; }
+
 /* Dialogs */
 .sheet-bottom { align-items: flex-end; padding: 0; }
 .sheet-bottom .dialog { max-width: none; border-radius: 12px 12px 0 0; max-height: 88%; display: flex; flex-direction: column; }

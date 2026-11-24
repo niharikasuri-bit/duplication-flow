@@ -321,6 +321,7 @@
     sync: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>',
     minus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
     plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
+    alertWarn: '<svg class="dialog-icon" viewBox="0 0 48 44" aria-hidden="true"><path d="M24 1 47 43H1z" fill="#B91900"/><path d="M24 15v14" stroke="#fff" stroke-width="4.5" stroke-linecap="round"/><circle cx="24" cy="36" r="2.6" fill="#fff"/></svg>',
     pin: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>',
     notFound: '<svg class="empty-art" viewBox="0 0 160 124" fill="none" aria-hidden="true">'
       + '<rect x="34" y="14" width="68" height="84" rx="3" fill="#fff" stroke="#B1B4B6" stroke-width="2"/>'
@@ -603,7 +604,7 @@
             <div><dt>Gender</dt><dd>${esc(m.member.gender || "–")}</dd></div>
           </dl>
           <div class="xm-actions">
-            <button class="btn btn-teal" data-action="same-person" data-i="${i}" aria-describedby="xm-${i}">Use Matched Registration</button>
+            <button class="btn btn-primary" data-action="same-person" data-i="${i}" aria-describedby="xm-${i}">Use Matched Registration</button>
             <button class="btn-link xm-compare" data-action="open-compare" data-i="${i}" aria-describedby="xm-${i}">Compare Details</button>
           </div>
         </article></li>`;
@@ -613,7 +614,7 @@
           <ul class="xm-list">${state.matches.map(item).join("")}</ul>
           ${state.compareOpen ? compareDialogHtml() : ""}
           ${quickReasonHtml()}`,
-        footer: `<button class="btn btn-grey" data-action="continue-current">Continue Current Registration</button>`
+        footer: `<button class="btn btn-secondary" data-action="continue-current">Continue Current Registration</button>`
       };
     },
 
@@ -716,29 +717,27 @@
       ["ID Number", e.idNumber || "–", p.idType === "Not available" ? "–" : p.idNumber || "–", !!(e.idNumber && p.idNumber && e.idNumber !== p.idNumber)]
     ];
     return `<div class="dialog-backdrop" id="compare-dialog">
-      <div class="dialog alert-dialog" role="dialog" aria-modal="true" aria-labelledby="pm-title" aria-describedby="pm-desc">
-        <button class="dialog-close alert-x" data-action="close-compare" aria-label="Close">${ICON.close}</button>
-        <div class="alert-scroll">
-          <span class="alert-icon">${ICON.warn}</span>
-          <h2 class="alert-title" id="pm-title">Possible Match Found</h2>
-          <p class="alert-desc" id="pm-desc">We found an existing registration that may belong to this person. Review the details to confirm.</p>
-          <ul class="reason-bar" aria-label="Why this may be the same person">
-            ${m.same.map(r => `<li>${esc(r)}</li>`).join("")}
-            ${m.diff.map(r => `<li class="is-diff">${esc(r)}</li>`).join("")}
-          </ul>
-          <table class="pm-table">
-            <caption class="sr-only">Existing record compared with this registration</caption>
-            <thead><tr>
-              <th scope="col">Field</th>
-              <th scope="col">Existing record<span class="pm-id">ID ${esc(regId(e))}</span></th>
-              <th scope="col">This registration</th>
-            </tr></thead>
-            <tbody>${rows.map(([l, a, b, d]) => `<tr class="${d ? "is-diff" : ""}"><th scope="row">${esc(l)}</th><td>${esc(a)}</td><td>${esc(b)}${d ? '<span class="sr-only"> (different)</span>' : ""}</td></tr>`).join("")}</tbody>
-          </table>
-        </div>
-        <div class="alert-actions">
-          <button class="btn btn-teal" data-action="same-person" data-i="${state.compareIdx}">Use Matched Registration</button>
-          <button class="btn btn-grey" data-action="continue-current">Continue Current Registration</button>
+      <div class="dialog alert" role="alertdialog" aria-modal="true" aria-labelledby="pm-title" aria-describedby="pm-desc">
+        <button class="dialog-close" data-action="close-compare" aria-label="Close">${ICON.close}</button>
+        ${ICON.alertWarn}
+        <h2 class="dialog-title" id="pm-title">Possible Match Found</h2>
+        <p class="dialog-desc" id="pm-desc"><strong>${esc(e.name)}</strong> is already registered in this household and may be the same person. Review the details to confirm.</p>
+        <ul class="alert-reasons" aria-label="Why this may be the same person">
+          ${m.same.map(r => `<li>${ICON.ok}<span>${esc(r)}</span></li>`).join("")}
+          ${m.diff.map(r => `<li class="is-diff">${ICON.info}<span>${esc(r)}</span></li>`).join("")}
+        </ul>
+        <table class="pm-table">
+          <caption class="sr-only">Existing record compared with this registration</caption>
+          <thead><tr>
+            <th scope="col"><span class="sr-only">Field</span></th>
+            <th scope="col">Existing record<span class="pm-id">ID ${esc(regId(e))}</span></th>
+            <th scope="col">This registration</th>
+          </tr></thead>
+          <tbody>${rows.map(([l, a, b, d]) => `<tr class="${d ? "is-diff" : ""}"><th scope="row">${esc(l)}</th><td>${esc(a)}</td><td>${esc(b)}${d ? '<span class="sr-only"> (different)</span>' : ""}</td></tr>`).join("")}</tbody>
+        </table>
+        <div class="dialog-actions">
+          <button class="btn btn-primary" data-action="same-person" data-i="${state.compareIdx}">Use Matched Registration</button>
+          <button class="btn btn-secondary" data-action="continue-current">Continue Current Registration</button>
         </div>
       </div>
     </div>`;
@@ -773,27 +772,27 @@
   let nearby = [];
   function nearbyDialogHtml() {
     if (!nearby.length) return "";
-    return `<div class="dialog-backdrop sheet-bottom" id="nearby-dialog">
-      <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="nearby-title">
-        <div class="dialog-head">
-          <h2 class="dialog-title" id="nearby-title">Is this one of these households?</h2>
-          <button class="dialog-close" data-action="close-nearby" aria-label="Close">${ICON.close}</button>
+    return `<div class="dialog-backdrop" id="nearby-dialog">
+      <div class="dialog alert" role="alertdialog" aria-modal="true" aria-labelledby="nearby-title" aria-describedby="nearby-desc">
+        <button class="dialog-close" data-action="close-nearby" aria-label="Close">${ICON.close}</button>
+        ${ICON.alertWarn}
+        <h2 class="dialog-title" id="nearby-title">Household May Already Exist</h2>
+        <p class="dialog-desc" id="nearby-desc">${nearby.length === 1 ? "A household" : `${nearby.length} households`} within ${NEARBY_M} m ${nearby.length === 1 ? "has" : "have"} someone with a similar name. Is this one of these households?</p>
+        <ul class="hh-list alert-list">${nearby.map(n => householdCard(n.h, { action: "nearby-open", label: "Use This Household", matched: n.matched, matchTag: "Similar name", showDistance: true })).join("")}</ul>
+        <div class="dialog-actions">
+          <button class="btn btn-secondary" data-action="nearby-new">Create New Household</button>
         </div>
-        <p class="dialog-desc">${plural(nearby.length, "household")} within ${NEARBY_M} m ${nearby.length === 1 ? "has" : "have"} someone with a similar name.</p>
-        <ul class="hh-list dialog-scroll">${nearby.map(n => householdCard(n.h, { action: "nearby-open", label: "Same Household", matched: n.matched, matchTag: "Similar name", showDistance: true })).join("")}</ul>
-        <div class="dialog-actions"><button class="btn btn-primary" data-action="nearby-new">No, Create New Household</button></div>
       </div>
     </div>`;
   }
 
   function quickReasonHtml() {
-    return `<div class="dialog-backdrop sheet-bottom" id="quick-dialog" hidden>
-      <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="quick-title">
-        <div class="dialog-head">
-          <h2 class="dialog-title" id="quick-title">Why is this a different person?</h2>
-          <button class="dialog-close" data-action="close-quick" aria-label="Close">${ICON.close}</button>
-        </div>
-        <ul class="quick-list">${NEW_PERSON_REASONS.map(r => `<li><button class="quick-opt" data-action="quick-reason" data-r="${esc(r)}">${esc(r)}</button></li>`).join("")}</ul>
+    return `<div class="dialog-backdrop" id="quick-dialog" hidden>
+      <div class="dialog alert" role="dialog" aria-modal="true" aria-labelledby="quick-title" aria-describedby="quick-desc">
+        <button class="dialog-close" data-action="close-quick" aria-label="Close">${ICON.close}</button>
+        <h2 class="dialog-title" id="quick-title">Add as New Person</h2>
+        <p class="dialog-desc" id="quick-desc">Why is this a different person?</p>
+        <div class="dialog-actions">${NEW_PERSON_REASONS.map(r => `<button class="btn btn-secondary" data-action="quick-reason" data-r="${esc(r)}">${esc(r)}</button>`).join("")}</div>
       </div>
     </div>`;
   }
@@ -801,12 +800,14 @@
   function confirmDialogHtml() {
     const m = state.matches[0];
     return `<div class="dialog-backdrop" id="confirm-dialog" hidden>
-      <div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-desc">
-        <h2 class="dialog-title" id="confirm-title">Add a new person?</h2>
-        <p class="dialog-desc" id="confirm-desc">${esc(m.member.name)} is already in this household (${esc(m.same.join(", ").toLowerCase())}). Adding ${esc(state.person.name.trim())} creates a second record.</p>
-        <div class="dialog-actions stack">
-          <button class="btn btn-primary" data-action="confirm-new">Add New Person</button>
-          <button class="btn btn-secondary" data-action="close-confirm">Go Back</button>
+      <div class="dialog alert" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-desc">
+        <button class="dialog-close" data-action="close-confirm" aria-label="Close">${ICON.close}</button>
+        ${ICON.alertWarn}
+        <h2 class="dialog-title" id="confirm-title">Person May Already Exist</h2>
+        <p class="dialog-desc" id="confirm-desc"><strong>${esc(m.member.name)}</strong> is already in this household. Adding <strong>${esc(state.person.name.trim())}</strong> may create a duplicate record. Do you want to add a new person anyway?</p>
+        <div class="dialog-actions">
+          <button class="btn btn-primary" data-action="close-confirm">Go Back</button>
+          <button class="btn btn-secondary" data-action="confirm-new">Add New Person Anyway</button>
         </div>
       </div>
     </div>`;
@@ -852,7 +853,7 @@
       </div>
       <div class="toast" id="toast" role="status" hidden></div>`;
     document.title = `${screen().name} – Duplication Flow`;
-    if (document.getElementById("compare-dialog")) document.getElementById("pm-title")?.setAttribute("tabindex", "-1"), document.getElementById("pm-title")?.focus();
+    if (document.getElementById("compare-dialog")) document.querySelector("#compare-dialog .btn-primary")?.focus();
     else if (document.getElementById("nearby-dialog")) document.querySelector("#nearby-dialog button")?.focus();
     else if (focusTitle) document.getElementById("page-title")?.focus({ preventScroll: true });
     if (state.route === "search" && !state.query) document.getElementById("search-input")?.focus();
