@@ -9,10 +9,17 @@
 (function () {
   "use strict";
 
-  const STORE_KEY = "duplication-supervisor-v7";
+  const STORE_KEY = "duplication-supervisor-v8";
   // District supervisor responses, shared with the desktop supervisor (worker → district supervisor → supervisor).
-  const DS_KEY = "duplication-ds-responses-v1";
-  const SEED_DS = () => ({ "FLG-1040": { decision: "Confirmed", reason: "Area overlap", comment: "Two teams covered Muhammad Bah’s area on the same day.", at: "Today, 11:05" } });
+  const DS_KEY = "duplication-ds-responses-v2";
+  // Flags the district supervisor has already reviewed. Only these reach the supervisor.
+  const SEED_DS = () => ({
+    "FLG-1040": { decision: "Confirmed", reason: "Area overlap", comment: "Two teams covered Muhammad Bah’s area on the same day.", at: "Today, 11:05" },
+    "FLG-1038": { decision: "Not a duplicate", reason: "Other", comment: "Twins. The caregiver showed both birth cards.", at: "Today, 10:40" },
+    "FLG-1036": { decision: "Confirmed", reason: "Spelling", comment: "Same child, name typed two ways.", at: "Today, 10:12" },
+    "FLG-1035": { decision: "Not a duplicate", reason: "Other", comment: "Different families, the heads are cousins.", at: "Yesterday, 17:30" },
+    "FLG-1024": { decision: "Confirmed", reason: "Area overlap", comment: "", at: "Yesterday, 16:05" }
+  });
   const dsResponse = id => { let ds = null; try { ds = JSON.parse(localStorage.getItem(DS_KEY)); } catch (e) { /* private mode */ } return (ds || SEED_DS())[id]; };
   const DS_LABEL = (f, d) => d === "Confirmed" ? (f.type === "delivery" ? "Confirmed double vaccination" : "Confirmed duplicate") : "Not a duplicate";
 
@@ -158,7 +165,8 @@
   // ---------- S1 Flag queue ----------
   function sortedFlags() {
     // A flag queue holds only flags waiting for review; a decided flag leaves the queue.
-    return store.flags.filter(f => f.status === "Open").sort((x, y) =>
+    // Only flags the district supervisor has reviewed reach the supervisor.
+    return store.flags.filter(f => f.status === "Open" && dsResponse(f.id)).sort((x, y) =>
       ((TYPE_RANK[y.type] || 0) - (TYPE_RANK[x.type] || 0)) ||
       ((TIER_RANK[y.tier] || 0) - (TIER_RANK[x.tier] || 0)));
   }
@@ -171,7 +179,7 @@
   }
   function queueRows() {
     const rows = filteredFlags();
-    if (!rows.length) return `<tr class="empty-row"><td colspan="8">No flags match your filters. <button class="link" data-action="clear">Clear filters</button></td></tr>`;
+    if (!rows.length) return `<tr class="empty-row"><td colspan="8">No flags here. Flags appear once the district supervisor has reviewed them, or none match your filters. <button class="link" data-action="clear">Clear filters</button></td></tr>`;
     return rows.map(f => `<tr class="${f.type === "delivery" ? "is-alert" : ""}">
         <td><span class="cell-strong">${esc(f.id)}</span><span class="cell-sub">${esc(f.raised)}</span></td>
         <td>${typeTag(f.type)}</td>
@@ -184,15 +192,16 @@
       </tr>`).join("");
   }
   function viewFlags() {
-    const all = store.flags, open = all.filter(f => f.status === "Open");
+    const all = store.flags, open = sortedFlags(), waiting = store.flags.filter(f => f.status === "Open" && !dsResponse(f.id)).length;
     const n = filteredFlags().length;
     return `${crumbs([["Home", "index.html"], ["Flag Queue"]])}
-      ${head("Flag Queue", "Possible double vaccinations and duplicate households and people found after records sync are here. Double vaccinations come first, then the strongest match. Open a flag to compare the records and decide.")}
+      ${head("Flag Queue", "Flags the district supervisor has reviewed come here for your final decision. Double vaccinations come first, then the strongest match. Open a flag to see the district supervisor’s response, compare the records and decide.")}
       ${stats([
         [open.length, "Flags to review"],
         [open.filter(f => f.type === "delivery").length, "Possible double vaccinations", true],
         [open.filter(f => f.type === "household").length, "Possible duplicate households"],
-        [open.filter(f => f.type === "individual").length, "Possible duplicate people"]
+        [open.filter(f => f.type === "individual").length, "Possible duplicate people"],
+        [waiting, "Waiting for the district supervisor"]
       ])}
       <div class="card">
         <div class="filters">

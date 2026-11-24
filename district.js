@@ -12,10 +12,17 @@
  */
 (() => {
   "use strict";
-  const STORE_KEY = "duplication-district-v3";
+  const STORE_KEY = "duplication-district-v4";
   // District supervisor responses, shared with the desktop supervisor (worker → district supervisor → supervisor).
-  const DS_KEY = "duplication-ds-responses-v1";
-  const SEED_DS = () => ({ "FLG-1040": { decision: "Confirmed", reason: "Area overlap", comment: "Two teams covered Muhammad Bah’s area on the same day.", at: "Today, 11:05" } });
+  const DS_KEY = "duplication-ds-responses-v2";
+  // Flags the district supervisor has already reviewed. Only these reach the supervisor.
+  const SEED_DS = () => ({
+    "FLG-1040": { decision: "Confirmed", reason: "Area overlap", comment: "Two teams covered Muhammad Bah’s area on the same day.", at: "Today, 11:05" },
+    "FLG-1038": { decision: "Not a duplicate", reason: "Other", comment: "Twins. The caregiver showed both birth cards.", at: "Today, 10:40" },
+    "FLG-1036": { decision: "Confirmed", reason: "Spelling", comment: "Same child, name typed two ways.", at: "Today, 10:12" },
+    "FLG-1035": { decision: "Not a duplicate", reason: "Other", comment: "Different families, the heads are cousins.", at: "Yesterday, 17:30" },
+    "FLG-1024": { decision: "Confirmed", reason: "Area overlap", comment: "", at: "Yesterday, 16:05" }
+  });
 
   const ROOT_CAUSES = ["Sync failed", "Spelling", "Info mismatch", "Area overlap", "Other"];
   const TIER_RANK = { Definite: 3, Strong: 2, Low: 1 };
