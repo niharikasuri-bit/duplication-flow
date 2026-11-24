@@ -562,7 +562,7 @@
         return `<li><article class="member-card ${p.flag ? "is-flagged" : ""}" aria-labelledby="m-${p.id}">
           <div class="member-top">
             <h3 class="member-name" id="m-${p.id}">${esc(p.name)}</h3>
-            <button class="edit-link" data-action="not-in-prototype" aria-label="Edit ${esc(p.name)}">${ICON.edit}Edit</button>
+            ${p.status === "done" ? "" : `<button class="edit-link" data-action="not-in-prototype" aria-label="Edit ${esc(p.name)}">${ICON.edit}Edit</button>`}
           </div>
           <p class="member-sub"><span>${esc(p.gender || "Gender not recorded")}</span><span class="sep" aria-hidden="true"></span><span>${esc(ageLabel(p.age))}</span></p>
           ${statusChip(p)}
@@ -924,7 +924,7 @@
       ${inner ? `<div class="app-bar">
           <button class="back-btn" data-action="back">${ICON.back}Back</button>
           <button class="help-btn" data-action="help" aria-haspopup="dialog">Help${ICON.help}</button>
-        </div>${sysBanner()}` : ""}
+        </div>${state.route === "overview" ? "" : sysBanner()}` : ""}
       <div class="body body-${state.route}" id="screen-body">${view.tag ? tagPill(view.tag) : ""}${withDescription(view.body)}</div>
       ${view.footer ? `<footer class="footer">${view.footer}</footer>` : ""}
       <div class="sheet-backdrop" id="help-sheet" hidden>

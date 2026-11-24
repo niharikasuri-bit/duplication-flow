@@ -130,6 +130,11 @@ table.data tr.is-alert td:first-child { box-shadow: inset 3px 0 0 var(--error); 
 .m-legend li::before { content: ""; width: 12px; height: 12px; border-radius: 2px; background: var(--m-bg); box-shadow: inset 3px 0 0 var(--m-c); border: 1px solid var(--m-c); }
 .rec-sub { display: block; margin-top: 2px; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--warning); }
 .sub-title { margin-top: 24px; font-size: 16px; line-height: 18px; font-weight: 700; color: var(--primary-2); }
+.person-pair { margin-top: 16px; }
+.person-pair-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.person-pair-head h4 { font-size: 14px; line-height: 19px; font-weight: 700; color: var(--text); }
+.person-pair .rec-pair { margin-top: 8px; }
+.rec-empty p { margin-top: 12px; font-size: 14px; line-height: 19px; color: var(--text-2); }
 .pair-list { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
 .pair-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 16px; align-items: center; background: var(--paper-2); border: 1px solid var(--border); border-radius: 4px; padding: 12px 16px; font-size: 14px; line-height: 19px; }
 .pair-row > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }

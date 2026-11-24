@@ -10,7 +10,7 @@
 (function () {
   "use strict";
 
-  const STORE_KEY = "duplication-supervisor-v2";
+  const STORE_KEY = "duplication-supervisor-v3";
   const TIER_RANK = { Definite: 3, Strong: 2, Low: 1 };
   const ROOT_CAUSES = ["Sync failed", "Spelling", "Info mismatch", "Area overlap", "Other"];
   const DELIVERY_CAUSES = ["Sync failed", "Area overlap", "Other"];
@@ -18,7 +18,46 @@
   // ---------- Demo flags ----------
   const SEED_FLAGS = () => [
     {
-      id: "FLG-1042", type: "delivery", tier: "Definite", status: "Open", area: "Solimbo", team: "Team 2", collector: "J. Koroma", raised: "Today, 10:05",
+      id: "FLG-1043", type: "vaccination", status: "Open", area: "Kanu", team: "Team 3", collector: "S. Turay", raised: "Today, 11:20", source: "Raised by worker",
+      title: "Aminata Turay", household: "Abu Turay", reason: "Wrong child marked as vaccinated", deliverBack: true,
+      note: "Vaccination was recorded on Aminata, but her brother Alusine was the one vaccinated.",
+      child: { id: "IND-56012", name: "Aminata Turay", gender: "Female", age: "3 years 2 months", dob: "14/09/2023" },
+      delivery: { time: "Today, 09:48", coords: "8.49002, -13.22561", worker: "S. Turay (Team 3)", sync: "Succeeded, today 08:15" },
+      flaggedBy: "S. Turay (Team 3)"
+    },
+    {
+      id: "FLG-1041", type: "vaccination", status: "Open", area: "Solimbo", team: "Team 1", collector: "M. Kargbo", raised: "Today, 09:40", source: "Raised by worker",
+      title: "Isatu Conteh", household: "Foday Conteh", reason: "Child was not vaccinated", deliverBack: true,
+      note: "The caregiver says Isatu was not home on that day.",
+      child: { id: "IND-55340", name: "Isatu Conteh", gender: "Female", age: "1 year 4 months", dob: "02/07/2025" },
+      delivery: { time: "Yesterday, 14:12", coords: "8.48530, -13.23011", worker: "A. Sesay (Team 1)", sync: "Failed. Last succeeded yesterday 07:40", failed: true },
+      flaggedBy: "M. Kargbo (Team 1)"
+    },
+    {
+      id: "FLG-1037", type: "vaccination", status: "Open", area: "Makeni Road", team: "Team 4", collector: "K. Sesay", raised: "Yesterday, 15:05", source: "Raised by worker",
+      title: "Mohamed Kanu", household: "Sorie Kanu", reason: "Vaccinated twice this round",
+      note: "The caregiver showed a finger mark from an earlier visit this round.",
+      child: { id: "IND-54877", name: "Mohamed Kanu", gender: "Male", age: "4 years 1 month", dob: "20/10/2022" },
+      delivery: { time: "Yesterday, 14:50", coords: "8.48701, -13.22833", worker: "K. Sesay (Team 4)", sync: "Succeeded, yesterday 08:30" },
+      flaggedBy: "K. Sesay (Team 4)"
+    },
+    {
+      id: "FLG-1034", type: "vaccination", status: "Open", area: "Lunsar", team: "Team 2", collector: "J. Koroma", raised: "Yesterday, 10:15", source: "Raised by worker",
+      title: "Fatmata Sesay", household: "Ibrahim Sesay", reason: "Other",
+      note: "The date of the vaccination looks wrong. The caregiver says it was last week.",
+      child: { id: "IND-53902", name: "Fatmata Sesay", gender: "Female", age: "2 years 8 months", dob: "11/03/2024" },
+      delivery: { time: "Yesterday, 09:02", coords: "8.68210, -12.53101", worker: "J. Koroma (Team 2)", sync: "Succeeded, yesterday 07:58" },
+      flaggedBy: "J. Koroma (Team 2)"
+    },
+    {
+      id: "FLG-1033", type: "individual", tier: "Definite", status: "Open", area: "Lunsar", team: "Team 2", collector: "J. Koroma", raised: "Yesterday, 08:55", source: "Server match. The device had no match to show", syncFailed: true,
+      title: "Alusine Koroma and Alusine Koroma", household: "Santigie Koroma",
+      signals: ["Same ID number", "Same name", "Same age", "Same gender"],
+      a: { id: "IND-52210", name: "Alusine Koroma", gender: "Male", age: "2 years 3 months", dob: "05/08/2024", mobile: "–", idNo: "BC-80431", by: "M. Kargbo (Team 1)", at: "10 Nov 2026", sync: "Succeeded" },
+      b: { id: "IND-55910", name: "Alusine Koroma", gender: "Male", age: "2 years 3 months", dob: "05/08/2024", mobile: "–", idNo: "BC-80431", by: "J. Koroma (Team 2)", at: "Yesterday, 08:50", sync: "Failed. Last succeeded 2 days ago" }
+    },
+    {
+      id: "FLG-1042", type: "delivery", tier: "Definite", status: "Open", area: "Solimbo", team: "Team 2", collector: "J. Koroma", raised: "Today, 10:05", source: "Server: two deliveries on one record",
       title: "Aissatou Sow", household: "Ousmane Sow", age: "3 years 5 months", gender: "Female", round: 2,
       deliveries: [
         { time: "Yesterday, 15:05", coords: "8.48311, -13.23102", worker: "M. Kargbo (Team 1)", sync: "Succeeded, yesterday 08:02" },
@@ -26,7 +65,7 @@
       ]
     },
     {
-      id: "FLG-1040", type: "delivery", tier: "Strong", status: "Open", area: "Kanu", team: "Team 3", collector: "F. Bangura", raised: "Today, 09:12",
+      id: "FLG-1040", type: "delivery", tier: "Strong", status: "Open", area: "Kanu", team: "Team 3", collector: "F. Bangura", raised: "Today, 09:12", source: "Server: deliveries on two matched records",
       title: "Hawa Bah and Awa Bah", household: "Muhammad Bah", age: "2 years 6 months", gender: "Female", round: 2,
       note: "Two records the server matched as a Strong pair each received a vaccination this round.",
       deliveries: [
@@ -35,7 +74,7 @@
       ]
     },
     {
-      id: "FLG-1039", type: "household", tier: "Strong", status: "Open", area: "Solimbo", team: "Team 2", collector: "J. Koroma", raised: "Today, 08:47",
+      id: "FLG-1039", type: "household", tier: "Strong", status: "Open", area: "Solimbo", team: "Team 2", collector: "J. Koroma", raised: "Today, 08:47", source: "Server match. The device had no match to show",
       title: "Fatoumata Camara and Fatou Camara", distance: 35, syncFailed: true,
       signals: ["Similar head name", "35 m apart", "2 members match"],
       a: { id: "HH-20418", head: "Fatoumata Camara", coords: "8.48402, -13.22994", members: 4, by: "A. Sesay (Team 1)", at: "12 Nov 2026", sync: "Succeeded" },
@@ -48,21 +87,21 @@
       searchTerm: "Fatou Camra"
     },
     {
-      id: "FLG-1038", type: "individual", tier: "Strong", status: "Open", area: "Solimbo", team: "Team 1", collector: "A. Sesay", raised: "Yesterday, 16:20",
+      id: "FLG-1038", type: "individual", tier: "Strong", status: "Open", area: "Solimbo", team: "Team 1", collector: "A. Sesay", raised: "Yesterday, 16:20", source: "Worker added as new despite a match",
       title: "Kadiatou Kamara and Khadija Kamara", household: "Seydou Kamara",
       signals: ["Similar name", "Same age", "Same gender"], reason: "Twin or sibling",
       a: { id: "IND-55102", name: "Kadiatou Kamara", gender: "Female", age: "0 years 10 months", dob: "24/01/2026", mobile: "–", idNo: "–", by: "A. Sesay (Team 1)", at: "03 Nov 2026", sync: "Succeeded" },
       b: { id: "IND-55871", name: "Khadija Kamara", gender: "Female", age: "0 years 10 months", dob: "24/01/2026", mobile: "–", idNo: "–", by: "A. Sesay (Team 1)", at: "Yesterday, 16:18", sync: "Succeeded" }
     },
     {
-      id: "FLG-1036", type: "individual", tier: "Low", status: "Open", area: "Kanu", team: "Team 3", collector: "F. Bangura", raised: "Yesterday, 11:02",
+      id: "FLG-1036", type: "individual", tier: "Low", status: "Open", area: "Kanu", team: "Team 3", collector: "F. Bangura", raised: "Yesterday, 11:02", source: "Worker added as new despite a match",
       title: "Husseini Bah and Husain Bah", household: "Muhammad Bah",
       signals: ["Similar name", "Same age", "Same gender"], reason: "Twin or sibling",
       a: { id: "IND-54020", name: "Husseini Bah", gender: "Male", age: "1 year 11 months", dob: "24/12/2024", mobile: "–", idNo: "–", by: "F. Bangura (Team 3)", at: "28 Oct 2026", sync: "Succeeded" },
       b: { id: "IND-55790", name: "Husain Bah", gender: "Male", age: "1 year 11 months", dob: "24/12/2024", mobile: "–", idNo: "–", by: "F. Bangura (Team 3)", at: "Yesterday, 11:00", sync: "Succeeded" }
     },
     {
-      id: "FLG-1035", type: "household", tier: "Low", status: "Open", area: "Kanu", team: "Team 3", collector: "S. Turay", raised: "Yesterday, 09:30",
+      id: "FLG-1035", type: "household", tier: "Low", status: "Open", area: "Kanu", team: "Team 3", collector: "S. Turay", raised: "Yesterday, 09:30", source: "Worker created as new despite a match", reason: "Different family with a similar name",
       title: "Muhammad Bah and Mamadu Bah", distance: 48,
       signals: ["Similar head name", "48 m apart"],
       a: { id: "HH-19876", head: "Muhammad Bah", coords: "8.49120, -13.22410", members: 4, by: "F. Bangura (Team 3)", at: "28 Oct 2026", sync: "Succeeded" },
@@ -71,19 +110,19 @@
       searchTerm: "Mamadu"
     },
     {
-      id: "FLG-1031", type: "individual", tier: "Definite", status: "Confirmed", area: "Solimbo", team: "Team 1", collector: "A. Sesay", raised: "20 Nov 2026",
+      id: "FLG-1031", type: "individual", tier: "Definite", status: "Confirmed", area: "Solimbo", team: "Team 1", collector: "A. Sesay", raised: "20 Nov 2026", source: "Worker added as new despite a match",
       title: "Mariama Camara and Mariatu Camara", household: "Fatoumata Camara", signals: ["Same ID number", "Similar name", "Same age"], rootCause: "Spelling",
       a: { id: "IND-50211", name: "Mariama Camara", gender: "Female", age: "4 years 0 months", dob: "12/11/2022", mobile: "–", idNo: "BC-77120", by: "A. Sesay (Team 1)", at: "12 Nov 2026", sync: "Succeeded" },
       b: { id: "IND-51980", name: "Mariatu Camara", gender: "Female", age: "4 years 0 months", dob: "12/11/2022", mobile: "–", idNo: "BC-77120", by: "M. Kargbo (Team 1)", at: "19 Nov 2026", sync: "Succeeded" }
     },
     {
-      id: "FLG-1027", type: "individual", tier: "Strong", status: "Not a duplicate", area: "Solimbo", team: "Team 1", collector: "A. Sesay", raised: "18 Nov 2026",
+      id: "FLG-1027", type: "individual", tier: "Strong", status: "Not a duplicate", area: "Solimbo", team: "Team 1", collector: "A. Sesay", raised: "18 Nov 2026", source: "Worker added as new despite a match",
       title: "Ibrahima Diallo and Ibrahim Diallo", household: "Mohammed Diallo", signals: ["Similar name", "Age within 1 month", "Same gender"], reason: "Twin or sibling", rootCause: "Other",
       a: { id: "IND-49870", name: "Ibrahima Diallo", gender: "Male", age: "0 years 8 months", dob: "24/03/2026", mobile: "–", idNo: "–", by: "A. Sesay (Team 1)", at: "02 Nov 2026", sync: "Succeeded" },
       b: { id: "IND-51203", name: "Ibrahim Diallo", gender: "Male", age: "0 years 9 months", dob: "24/02/2026", mobile: "–", idNo: "–", by: "A. Sesay (Team 1)", at: "18 Nov 2026", sync: "Succeeded" }
     },
     {
-      id: "FLG-1024", type: "household", tier: "Strong", status: "Open", area: "Makeni Road", team: "Team 4", collector: "K. Sesay", raised: "17 Nov 2026",
+      id: "FLG-1024", type: "household", tier: "Strong", status: "Open", area: "Makeni Road", team: "Team 4", collector: "K. Sesay", raised: "17 Nov 2026", source: "Server match across teams",
       title: "Seydou Kamara and Saidu Kamara", distance: 22, signals: ["Similar head name", "22 m apart", "1 member matches"],
       a: { id: "HH-18440", head: "Seydou Kamara", coords: "8.48650, -13.22780", members: 3, by: "A. Sesay (Team 1)", at: "03 Nov 2026", sync: "Succeeded" },
       b: { id: "HH-20112", head: "Saidu Kamara", coords: "8.48662, -13.22795", members: 2, by: "K. Sesay (Team 4)", at: "17 Nov 2026", sync: "Succeeded" },
@@ -125,10 +164,11 @@
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const uniq = arr => [...new Set(arr)].sort();
   const tag = (text, kind) => `<span class="tag tag-${kind}">${esc(text)}</span>`;
-  const tierTag = t => tag(t, { Definite: "error", Strong: "warning", Low: "success" }[t]);
+  const tierTag = t => t ? tag(t, { Definite: "error", Strong: "warning", Low: "success" }[t]) : `<span class="cell-sub">No match score</span>`;
   // Plain-language issue labels (what the supervisor is being asked to check).
-  const ISSUE = { delivery: "Possible double vaccination", household: "Possible duplicate household", individual: "Possible duplicate person" };
-  const typeTag = t => tag(ISSUE[t], t === "delivery" ? "error" : "neutral");
+  const ISSUE = { delivery: "Possible double vaccination", vaccination: "Vaccination record flagged", household: "Possible duplicate household", individual: "Possible duplicate person" };
+  const typeTag = t => tag(ISSUE[t], t === "delivery" ? "error" : t === "vaccination" ? "warning" : "neutral");
+  const TYPE_RANK = { delivery: 3, vaccination: 2 };
   const statusTag = s => tag(s, { Open: "info", Confirmed: "success", "Not a duplicate": "neutral", Suggested: "info", Approved: "success", Rejected: "neutral" }[s] || "neutral");
   const crumbs = items => `<nav class="crumbs" aria-label="Breadcrumb">${items.map((it, i) => (i < items.length - 1 ? `<a href="${it[1]}">${esc(it[0])}</a><span aria-hidden="true">/</span>` : `<span aria-current="page">${esc(it[0])}</span>`)).join("")}</nav>`;
   const head = (title, desc, actions = "") => `<div class="page-head"><div><h1 class="page-title">${esc(title)}</h1><p class="page-desc">${esc(desc)}</p></div>${actions ? `<div class="head-actions">${actions}</div>` : ""}</div>`;
@@ -146,8 +186,8 @@
   function sortedFlags() {
     // A flag queue holds only flags waiting for review; a decided flag leaves the queue.
     return store.flags.filter(f => f.status === "Open").sort((x, y) =>
-      ((y.type === "delivery") - (x.type === "delivery")) ||
-      (TIER_RANK[y.tier] - TIER_RANK[x.tier]));
+      ((TYPE_RANK[y.type] || 0) - (TYPE_RANK[x.type] || 0)) ||
+      ((TIER_RANK[y.tier] || 0) - (TIER_RANK[x.tier] || 0)));
   }
   function filteredFlags() {
     const q = ui.q.trim().toLowerCase();
@@ -163,7 +203,7 @@
         <td><span class="cell-strong">${esc(f.id)}</span><span class="cell-sub">${esc(f.raised)}</span></td>
         <td>${typeTag(f.type)}</td>
         <td>${tierTag(f.tier)}</td>
-        <td>${esc(f.title)}${f.syncFailed ? `<span class="cell-sub">Created after a failed sync</span>` : ""}</td>
+        <td>${esc(f.title)}<span class="cell-sub">${esc(f.source)}${f.reason ? ` · “${esc(f.reason)}”` : ""}</span>${f.syncFailed ? `<span class="cell-sub">Created after a failed sync</span>` : ""}</td>
         <td>${esc(f.area)}</td>
         <td>${esc(f.team)}</td>
         <td>${esc(f.collector)}</td>
@@ -174,11 +214,12 @@
     const all = store.flags, open = all.filter(f => f.status === "Open");
     const n = filteredFlags().length;
     return `${crumbs([["Home", "index.html"], ["Flag Queue"]])}
-      ${head("Flag Queue", "Possible duplicates and double deliveries found after records sync are here. Delivery alerts come first, then flags by match strength. Open a flag to compare the records and decide.")}
+      ${head("Flag Queue", "Possible duplicates and double deliveries found after records sync, and vaccination records flagged by workers, are here. Delivery alerts come first, then worker flags, then flags by match strength. Open a flag to check the records and decide.")}
       ${stats([
         [open.length, "Flags to review"],
         [open.filter(f => f.type === "delivery").length, "Possible double vaccinations", true],
-        [open.filter(f => f.type !== "delivery").length, "Possible duplicates"]
+        [open.filter(f => f.type === "household" || f.type === "individual").length, "Possible duplicates"],
+        [open.filter(f => f.type === "vaccination").length, "Vaccination records flagged by workers"]
       ])}
       <div class="card">
         <div class="filters">
@@ -235,17 +276,33 @@
     if (String(va) === String(vb)) return "same";
     return kind === "similar" ? "similar" : "diff";
   }
-  function recordPanels(rows, a, b) {
-    const panel = (side, rec) => `<section class="rec" aria-labelledby="rec-${side}">
-        <header class="rec-head"><h3 id="rec-${side}">Record ${side}</h3><span class="rec-id">${esc(rec.id)}</span></header>
+  function recPanel(uid, title, idText, rows, side) {
+    return `<section class="rec" aria-labelledby="rec-${uid}">
+        <header class="rec-head"><h3 id="rec-${uid}">${esc(title)}</h3>${idText ? `<span class="rec-id">${esc(idText)}</span>` : ""}</header>
         <dl class="rec-rows">${rows.map(([l, va, vb, kind]) => {
           const v = side === "A" ? va : vb, k = matchKind(String(va).split(" · ")[0], String(vb).split(" · ")[0], kind);
           const val = esc(v).replace(/ · (.+)$/, '<span class="rec-sub">$1</span>');
           return `<div class="${k ? `m-${k}` : ""}"><dt>${esc(l)}</dt><dd>${val}${k ? `<span class="sr-only"> (${MATCH_LABEL[k].toLowerCase()})</span>` : ""}</dd></div>`;
         }).join("")}</dl>
       </section>`;
-    return `<ul class="m-legend" aria-label="Highlight key"><li class="m-same">Same</li><li class="m-similar">Similar</li><li class="m-diff">Different</li></ul>
-      <div class="rec-pair">${panel("A", a)}${panel("B", b)}</div>`;
+  }
+  const LEGEND = `<ul class="m-legend" aria-label="Highlight key"><li class="m-same">Same</li><li class="m-similar">Similar</li><li class="m-diff">Different</li></ul>`;
+  function recordPanels(rows, a, b) {
+    return `${LEGEND}<div class="rec-pair">${recPanel("A", "Record A", a.id, rows, "A")}${recPanel("B", "Record B", b.id, rows, "B")}</div>`;
+  }
+  // People in both households: each pair uses the same Household A / Household B containers and highlights.
+  function personPairs(pairs) {
+    const parse = s => { if (!s || s === "–") return null; const [name, g, age] = s.split(", "); return { name, gender: { F: "Female", M: "Male" }[g] || g, age }; };
+    return pairs.map((p, i) => {
+      const a = parse(p.a), b = parse(p.b);
+      const rows = b ? [["Name", a.name, b.name, "similar"], ["Gender", a.gender, b.gender], ["Age", a.age, b.age, "similar"]]
+                     : [["Name", a.name, "", false], ["Gender", a.gender, "", false], ["Age", a.age, "", false]];
+      return `<div class="person-pair">
+          <div class="person-pair-head"><h4>Person ${i + 1}</h4>${p.match ? tierTag(p.match) : `<span class="pair-none">No match in household B</span>`}</div>
+          <div class="rec-pair">${recPanel(`p${i}A`, "Household A", "", rows, "A")}${b ? recPanel(`p${i}B`, "Household B", "", rows, "B")
+            : `<section class="rec rec-empty" aria-labelledby="rec-p${i}B"><header class="rec-head"><h3 id="rec-p${i}B">Household B</h3></header><p>No matching person in household B.</p></section>`}</div>
+        </div>`;
+    }).join("");
   }
   function cmpTable(rows, aTitle, bTitle) {
     return `<table class="cmp">
@@ -257,7 +314,10 @@
   function decisionCard(f, kind) {
     const done = f.status !== "Open";
     const causes = kind === "delivery" ? DELIVERY_CAUSES : ROOT_CAUSES;
-    const choices = kind === "delivery"
+    const choices = kind === "vaccination"
+      ? [["Confirmed", "Confirm flag", f.reason === "Vaccinated twice this round" ? "The child was vaccinated twice this round." : "The vaccination record is wrong. It is marked as wrong and the child shows not vaccinated."],
+         ["Not a duplicate", "Record is correct", "The vaccination record stands."]]
+      : kind === "delivery"
       ? [["Confirmed", "Confirm double delivery", "The child was vaccinated twice this round."],
          ["Not a duplicate", "Not a duplicate", "For example, the wrong member was marked as vaccinated."]]
       : [["Confirmed", "Confirm duplicate", "Mark both records as the same and link them. Both records are kept."],
@@ -299,19 +359,41 @@
             <p class="card-sub">${isHH ? "" : `Household: ${esc(f.household)} · `}Signals matched: ${f.signals.map(esc).join(", ")}</p>
             ${recordPanels(rows, f.a, f.b)}
             ${f.reason ? `<div class="rec-notes">
-              <div><h3>Worker’s reason</h3><p>The worker added record B as a new person: “${esc(f.reason)}”.</p></div>
+              <div><h3>Worker’s reason</h3><p>The worker ${isHH ? "created household B as a new household" : "added record B as a new person"}: “${esc(f.reason)}”.</p></div>
             </div>` : ""}
-            ${isHH ? `<h3 class="sub-title">People in both households</h3>
-            <div class="pair-list">${f.pairs.map(p => `<div class="pair-row">
-                <div><span class="pair-lbl">Household A</span><span>${esc(p.a)}</span></div>
-                <div><span class="pair-lbl">Household B</span><span>${esc(p.b)}</span></div>
-                <div class="pair-match">${p.match ? tierTag(p.match) : `<span class="pair-none">No match</span>`}</div>
-              </div>`).join("")}</div>` : ""}
+            ${isHH ? `<h3 class="sub-title">People in both households</h3>${personPairs(f.pairs)}` : ""}
           </div>
         </div>
         <div class="review-side">
           ${decisionCard(f, "review")}
         </div>
+      </div>`;
+  }
+
+  // ---------- Vaccination record flagged by a worker ----------
+  function viewWorkerFlag(f) {
+    const c = f.child, d = f.delivery;
+    return `${crumbs([["Home", "index.html"], ["Flag Queue", "#/flags"], [f.id]])}
+      ${head("Review Flagged Vaccination", "A frontline worker flagged this vaccination record. Check the record and the worker’s reason, then decide.")}
+      <div class="signals">${typeTag(f.type)}${d.failed ? tag("Recorded after a failed sync", "warning") : ""}</div>
+      <div class="review-grid">
+        <div>
+          <div class="card card-pad">
+            <h2 class="card-title">${esc(f.title)}</h2>
+            <p class="card-sub">Household: ${esc(f.household)} · Flagged by ${esc(f.flaggedBy)} · ${esc(f.raised)}</p>
+            <div class="rec-pair">
+              <section class="rec" aria-labelledby="wf-child"><header class="rec-head"><h3 id="wf-child">Child</h3><span class="rec-id">${esc(c.id)}</span></header>
+                <dl class="rec-rows"><div><dt>Full name</dt><dd>${esc(c.name)}</dd></div><div><dt>Gender</dt><dd>${esc(c.gender)}</dd></div><div><dt>Age</dt><dd>${esc(c.age)}</dd></div><div><dt>Date of birth</dt><dd>${esc(c.dob)}</dd></div></dl></section>
+              <section class="rec" aria-labelledby="wf-vac"><header class="rec-head"><h3 id="wf-vac">Vaccination record</h3></header>
+                <dl class="rec-rows"><div><dt>Time</dt><dd>${esc(d.time)}</dd></div><div><dt>Household coordinates</dt><dd>${esc(d.coords)}</dd></div><div><dt>Worker</dt><dd>${esc(d.worker)}</dd></div><div class="${d.failed ? "is-diff" : ""}"><dt>Device sync</dt><dd>${esc(d.sync)}</dd></div></dl></section>
+            </div>
+            <div class="rec-notes">
+              <div><h3>Worker’s reason</h3><p>“${esc(f.reason)}”${f.note ? `. ${esc(f.note)}` : ""}</p></div>
+              ${f.deliverBack ? `<div><h3>On the worker’s app</h3><p>Take Action is back on this child’s card with a warning, so the child can still be vaccinated while you review.</p></div>` : ""}
+            </div>
+          </div>
+        </div>
+        <div class="review-side">${decisionCard(f, "vaccination")}</div>
       </div>`;
   }
 
@@ -444,7 +526,7 @@
   function viewDashboard() {
     const per = v => v.toFixed(1);
     const open = store.flags.filter(f => f.status === "Open");
-    const issues = [["Possible duplicate person", open.filter(f => f.type === "individual").length], ["Possible duplicate household", open.filter(f => f.type === "household").length], ["Possible double vaccination", open.filter(f => f.type === "delivery").length]].filter(d => d[1] > 0);
+    const issues = [["Possible duplicate person", open.filter(f => f.type === "individual").length], ["Possible duplicate household", open.filter(f => f.type === "household").length], ["Possible double vaccination", open.filter(f => f.type === "delivery").length], ["Vaccination record flagged", open.filter(f => f.type === "vaccination").length]].filter(d => d[1] > 0);
     const kpi = (n, l, note, alert) => `<div class="kpi ${alert ? "is-alert" : ""}"><span class="kpi-num">${n}</span><span class="kpi-label">${l}</span><span class="kpi-note">${note}</span></div>`;
     return `${crumbs([["Home", "index.html"], ["Duplication Dashboard"]])}
       ${head("Duplication Dashboard", "See how many duplicates are found, where they come from and why. Use this to plan support and training for this round.", `<a class="btn btn-primary" href="#/flags">Go to Flag Queue</a>`)}
@@ -474,7 +556,7 @@
     let html, title = TITLES[section];
     if (section === "flags" && parts[1]) {
       const f = store.flags.find(x => x.id === parts[1]);
-      if (f) { html = f.type === "delivery" ? viewAlert(f) : viewReview(f); title = f.type === "delivery" ? "Review Delivery Alert" : "Review Possible Duplicate"; }
+      if (f) { html = f.type === "delivery" ? viewAlert(f) : f.type === "vaccination" ? viewWorkerFlag(f) : viewReview(f); title = f.type === "delivery" ? "Review Delivery Alert" : f.type === "vaccination" ? "Review Flagged Vaccination" : "Review Possible Duplicate"; }
     }
     if (!html) html = { flags: viewFlags, aliases: viewAliases, dashboard: viewDashboard, insights: viewDashboard }[section]();
     $page.innerHTML = html;
@@ -508,7 +590,9 @@
       if (!decision || !cause) return (decision ? document.getElementById("root-cause") : document.querySelector('input[name="decision"]')).focus();
       f.status = decision; f.rootCause = cause; f.comment = document.getElementById("comment").value; save();
       location.hash = "#/flags";
-      toast({ Confirmed: f.type === "delivery" ? `${f.id} confirmed as a double delivery.` : `${f.id} confirmed as a duplicate. The records are linked.`, "Not a duplicate": `${f.id} marked not a duplicate. It won’t be raised again.` }[decision]);
+      toast(f.type === "vaccination"
+        ? { Confirmed: `${f.id} confirmed. ${f.reason === "Vaccinated twice this round" ? "Recorded as a double vaccination." : "The vaccination record is marked as wrong."}`, "Not a duplicate": `${f.id} closed. The vaccination record stands.` }[decision]
+        : { Confirmed: f.type === "delivery" ? `${f.id} confirmed as a double delivery.` : `${f.id} confirmed as a duplicate. The records are linked.`, "Not a duplicate": `${f.id} marked not a duplicate. It won’t be raised again.` }[decision]);
     }
   });
   function showTip(el, x, y) {
