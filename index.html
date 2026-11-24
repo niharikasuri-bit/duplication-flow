@@ -14,17 +14,11 @@
   <aside class="demo" id="demo" aria-labelledby="demo-title">
     <h2 id="demo-title">Prototype controls</h2>
     <p class="demo-note">Not part of the app. Switch states to see how each screen responds.</p>
-    <label for="demo-sync">Sync result</label>
+    <label for="demo-sync">Sync</label>
     <select id="demo-sync">
       <option value="ok">Sync succeeded</option>
+      <option value="pending">Sync pending</option>
       <option value="failed">Sync failed</option>
-      <option value="regFailed">Registrations failed, vaccination status succeeded</option>
-    </select>
-    <label for="demo-upload">Sync to the server</label>
-    <select id="demo-upload">
-      <option value="ok">Succeeds</option>
-      <option value="pending">Pending</option>
-      <option value="failed">Fails</option>
     </select>
     <label for="demo-retry">When the worker retries</label>
     <select id="demo-retry">

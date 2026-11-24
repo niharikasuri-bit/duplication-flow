@@ -108,9 +108,9 @@
   const freshStore = () => ({
     households: SEED_HH(),
     pending: 0,
-    // Each sync type succeeds or fails on its own; a partial download counts as failed.
-    sync: { reg: true, status: true, flags: true },
-    upload: "ok",             // ok | pending | failed
+    // Sync is all or nothing: everything syncs or nothing does. No partial states.
+    synced: true,
+    hold: false,              // prototype only: keep records waiting (Sync pending)
     retryWorks: true,
     retryFailed: false,       // a retry has failed → offer Continue Without Sync
     continued: false,         // worker carried on after a failed sync
@@ -119,14 +119,14 @@
   });
   let store;
   try { store = JSON.parse(localStorage.getItem(STORE_KEY)) || freshStore(); } catch (e) { store = freshStore(); }
-  if (typeof store.sync !== "object") store = freshStore();   // older demo data
+  if (typeof store.synced !== "boolean") store = freshStore();   // older demo data
   const save = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) { /* private mode */ } };
 
   const LAST_OK = "Today, 08:10", LAST_GOOD_BEFORE = "Yesterday, 17:40";
-  const syncOk = () => store.sync.reg && store.sync.status && store.sync.flags;
+  const syncOk = () => store.synced;
   const lastOk = ok => (ok ? LAST_OK : LAST_GOOD_BEFORE);
   // Households registered by other workers since the last successful registration sync.
-  const deviceHouseholds = () => store.households.filter(h => !(h.late && !store.sync.reg));
+  const deviceHouseholds = () => store.households.filter(h => !(h.late && !store.synced));
   const findHH = id => store.households.find(h => h.id === id);
 
   // ---------- Session state ----------
@@ -421,26 +421,23 @@
   const syncResult = ok => (ok ? `Succeeded, ${LAST_OK.toLowerCase()}` : `Failed. Last succeeded ${LAST_GOOD_BEFORE.toLowerCase()}`);
 
   function syncCard() {
-    const s = store.sync, ok = syncOk();
+    const ok = syncOk();
     // Compact: status pill + one summary line.
     const summary = [
       ok ? `Synced ${LAST_OK.toLowerCase()}` : `Last succeeded ${LAST_GOOD_BEFORE.toLowerCase()}`,
-      `${s.reg ? "1,248" : "1,236"} records`,
+      `${ok ? "1,248" : "1,236"} records`,
       `${store.pending} waiting to sync`
     ];
     let msg = "", btn = "";
     if (!ok) {
       msg = notice("error", store.continued
         ? "<b>Sync failed.</b> You’re continuing without the latest data. New records are checked again once they sync."
-        : `<b>Sync failed.</b> ${!s.reg ? "Search may miss households. " : ""}${!s.status ? "Recent vaccinations may be missing. " : ""}Try again before you start.`);
+        : "<b>Sync failed.</b> Search may miss households and recent vaccinations may be missing. Try again before you start.");
       btn = `<button class="btn btn-secondary btn-sm" data-action="retry-sync">${ICON.sync}Retry Sync</button>
         ${store.retryFailed && !store.continued ? `<button class="btn-link" data-action="continue-failed">Continue Without Sync</button>` : ""}`;
-    } else if (store.upload === "failed") {
-      msg = notice("error", `<b>Sync to the server failed.</b> ${esc(plural(store.pending, "record"))} saved on this device didn’t sync.`);
-      btn = `<button class="btn btn-secondary btn-sm" data-action="retry-upload">${ICON.sync}Retry Sync</button>`;
     }
     // Pill: failed (red) > pending, records waiting to sync (amber) > succeeded (green).
-    const failed = !ok || store.upload === "failed";
+    const failed = !ok;
     const pending = !failed && store.pending > 0;
     const pill = failed ? ["error", "Sync failed"] : pending ? ["warn", "Sync pending"] : ["ok", "Sync succeeded"];
     return `<section class="card sync-card" aria-labelledby="sync-title">
@@ -459,7 +456,6 @@
     const n = store.pending;
     let b = null;
     if (!syncOk()) b = ["error", store.continued ? "Sync failed. Continuing without the latest data." : "Sync failed. Recent records may be missing.", "Retry", "retry-sync"];
-    else if (store.upload === "failed" && n) b = ["error", `Sync to the server failed. ${plural(n, "record")} didn’t sync.`, "Retry", "retry-upload"];
     else if (n) b = ["info", `${plural(n, "record")} waiting to sync.`, "", ""];
     if (!b) return "";
     return `<div class="sys-banner banner-${b[0]}" role="status">${ICON[b[0] === "error" ? "stop" : "info"]}<span>${esc(b[1])}</span>${b[2] ? `<button class="banner-btn" data-action="${b[3]}">${esc(b[2])}</button>` : ""}</div>`;
@@ -667,8 +663,8 @@
       } else if (p.flag) {
         box = notice("warn", "<b>This child may be registered twice.</b> Your supervisor will check the records. You can still vaccinate, so the child isn’t missed.");
         footer = `<button class="btn btn-primary" data-action="vaccinate">Vaccinate</button><button class="btn btn-secondary" data-action="hold">Hold and Flag</button>`;
-      } else if (!store.sync.status) {
-        box = notice("warn", "<b>Vaccination sync failed.</b> Recent vaccinations may be missing. Ask the caregiver whether the child was vaccinated this round.");
+      } else if (!store.synced) {
+        box = notice("warn", "<b>Sync failed.</b> Recent vaccinations may be missing. Ask the caregiver whether the child was vaccinated this round.");
         footer = `<button class="btn btn-primary" data-action="vaccinate">Vaccinate</button><button class="btn btn-secondary" data-action="hold">Hold and Flag</button>`;
       } else {
         box = notice("ok", "<b>Not vaccinated this round.</b> You can vaccinate this child.");
@@ -682,7 +678,7 @@
               <div class="pair"><dt>Name</dt><dd>${esc(p.name)}</dd></div>
               <div class="pair"><dt>Gender</dt><dd>${esc(p.gender || "–")}</dd></div>
               <div class="pair"><dt>Age</dt><dd>${esc(ageLabel(p.age))}</dd></div>
-              <div class="pair"><dt>Vaccination sync</dt><dd>${esc(syncResult(store.sync.status))}</dd></div>
+              <div class="pair"><dt>Last sync</dt><dd>${esc(syncResult(store.synced))}</dd></div>
             </dl>
           </div>
           ${box}`,
@@ -725,7 +721,7 @@
   function searchResultsHtml() {
     const q = state.query.trim();
     const hits = searchHouseholds(q);
-    const meta = !store.sync.reg ? `<p class="search-meta search-failed">${ICON.stop}Registration sync failed. Last succeeded ${esc(LAST_GOOD_BEFORE.toLowerCase())}. Search may miss households.</p>` : "";
+    const meta = !store.synced ? `<p class="search-meta search-failed">${ICON.stop}Sync failed. Last succeeded ${esc(LAST_GOOD_BEFORE.toLowerCase())}. Search may miss households.</p>` : "";
     if (!hits) return meta;
     if (!hits.length) {
       return `${meta}<div class="empty" role="status">
@@ -895,8 +891,8 @@
   function queueUpload() {
     store.pending++;
     save();
-    if (store.upload === "ok") setTimeout(() => {
-      if (store.upload !== "ok") return;
+    if (store.synced && !store.hold) setTimeout(() => {
+      if (!store.synced || store.hold) return;
       store.pending = Math.max(0, store.pending - 1); save(); syncDemoPanel();
       const b = document.querySelector(".sys-banner"); if (b && !store.pending && syncOk()) b.remove();
     }, 4000);
@@ -921,7 +917,7 @@
       queueUpload();
       state.history = state.history.slice(0, state.history.lastIndexOf("search") + 1);
       state.route = "overview"; state.errors = {}; render();
-      toast(store.upload === "ok" ? "Household created. Syncing now." : "Household created. Saved on this device.");
+      toast(store.synced && !store.hold ? "Household created. Syncing now." : "Household created. Saved on this device.");
       return;
     }
     hh().members.push(rec);
@@ -941,7 +937,7 @@
     "start-search"() { state.query = ""; go("search"); },
     "retry-sync"() {
       if (store.retryWorks) {
-        store.sync = { reg: true, status: true, flags: true }; store.retryFailed = false; store.continued = false;
+        store.synced = true; store.hold = false; store.pending = 0; store.retryFailed = false; store.continued = false;
         save(); render({ focusTitle: false });
         toast("Sync succeeded.");
       } else {
@@ -952,12 +948,6 @@
     "continue-failed"() {
       store.continued = true; save(); render({ focusTitle: false });
       toast("Continuing without the latest data. New records are checked again once they sync.");
-    },
-    "retry-upload"() {
-      if (store.retryWorks) {
-        store.upload = "ok"; store.pending = 0; save(); render({ focusTitle: false });
-        toast("Records synced to the server.");
-      } else toast("Sync to the server failed again. Records stay saved on this device.");
     },
 
     // W3
@@ -1120,27 +1110,18 @@
 
   // ---------- Prototype controls (outside the phone) ----------
   const demo = document.getElementById("demo");
-  const SYNC_PRESETS = {
-    ok: { reg: true, status: true, flags: true },
-    failed: { reg: false, status: false, flags: false },
-    regFailed: { reg: false, status: true, flags: true }
-  };
   function syncDemoPanel() {
     if (!demo) return;
-    const s = store.sync;
-    demo.querySelector("#demo-sync").value = syncOk() ? "ok" : s.status ? "regFailed" : "failed";
-    demo.querySelector("#demo-upload").value = store.upload;
+    demo.querySelector("#demo-sync").value = !syncOk() ? "failed" : store.hold ? "pending" : "ok";
     demo.querySelector("#demo-retry").value = store.retryWorks ? "yes" : "no";
     demo.querySelector("#demo-pending").textContent = String(store.pending);
   }
   demo?.addEventListener("change", e => {
     if (e.target.id === "demo-sync") {
-      store.sync = { ...SYNC_PRESETS[e.target.value] }; store.retryFailed = false; store.continued = false;
-    }
-    if (e.target.id === "demo-upload") {
-      store.upload = e.target.value;
-      if (store.upload !== "ok" && !store.pending) store.pending = 3;
-      if (store.upload === "ok") store.pending = 0;
+      const v = e.target.value;
+      store.synced = v !== "failed"; store.hold = v === "pending"; store.retryFailed = false; store.continued = false;
+      if (v === "ok") store.pending = 0;
+      else if (!store.pending) store.pending = 3;
     }
     if (e.target.id === "demo-retry") store.retryWorks = e.target.value === "yes";
     save();
