@@ -259,15 +259,20 @@
     if (q.trim().length < 2) return null;
     const out = [];
     for (const h of deviceHouseholds()) {
-      let best = null;
-      for (const p of h.members) {
-        const r = searchName(q, p.name);
-        if (r && (!best || r.score > best.score || (r.score === best.score && best.fuzzy && !r.fuzzy))) best = { ...r, matched: p.name };
+      // A match on the household head wins over a match on a member.
+      const headRes = searchName(q, h.head);
+      let best = headRes ? { ...headRes, matched: h.head, byHead: true } : null;
+      if (!best) {
+        for (const p of h.members) {
+          if (p.head) continue;
+          const r = searchName(q, p.name);
+          if (r && (!best || r.score > best.score || (r.score === best.score && best.fuzzy && !r.fuzzy))) best = { ...r, matched: p.name, byHead: false };
+        }
       }
       if (best) out.push({ h, ...best });
     }
-    // Name closeness only: exact/starts-with first, then closer spelling. No distance at this layer.
-    return out.sort((a, b) => (a.fuzzy - b.fuzzy) || (b.score - a.score)).slice(0, 10);
+    // Order: households matched on the head first, then on a member; within each, exact before similar spelling, then closer spelling.
+    return out.sort((a, b) => (b.byHead - a.byHead) || (a.fuzzy - b.fuzzy) || (b.score - a.score)).slice(0, 10);
   }
 
   // ---------- Individual comparison (inside one household) ----------
