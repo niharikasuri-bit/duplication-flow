@@ -141,7 +141,10 @@
           <p class="progress-title">Flagged Duplicates</p>
           <div class="progress-track" role="progressbar" aria-label="Flags reviewed" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${done}"><div class="progress-fill" style="width:${total ? Math.round(done / total * 100) : 0}%"></div></div>
           <p class="progress-text"><span>${done} reviewed</span> · ${n} flag${n === 1 ? "" : "s"} to review</p>
-          <p class="progress-text">Possible double vaccinations and duplicate households and people found after records sync in your district.</p>
+          <div class="dq-metrics">
+            <div class="dq-metric dq-total"><span class="dq-mval">${total}</span><span class="dq-mlbl">Total flagged</span></div>
+            ${[["delivery", "Double vaccinations"], ["household", "Duplicate households"], ["individual", "Duplicate people"]].map(([t, l]) => `<div class="dq-metric"><span class="dq-mval">${store.flags.filter(f => f.type === t).length}</span><span class="dq-mlbl">${l}</span></div>`).join("")}
+          </div>
         </div>
         <ul class="home-tiles">
           <li><button class="home-tile" data-action="open-queue" data-tab="Pending">${ICON.flag.replace("<svg", '<svg class="tile-icon"')}<span>Review Flags</span></button></li>

@@ -78,3 +78,11 @@
 .dq-ctx.ctx-ok { background: #F1FFF8; color: var(--success); }
 .dq-comment { margin-top: 20px; }
 .dq-comment textarea { font-family: inherit; font-size: 16px; height: auto; min-height: 88px; padding: 10px 12px; resize: vertical; }
+
+/* Home metrics: total flagged, then split by issue */
+.dq-metrics { margin-top: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.dq-metric { display: flex; flex-direction: column; gap: 2px; padding: 10px 8px; background: var(--paper-2); border: 1px solid #E4E4E4; border-radius: 8px; }
+.dq-metric.dq-total { grid-column: 1 / -1; flex-direction: row; align-items: baseline; gap: 8px; }
+.dq-mval { font-size: 24px; line-height: 28px; font-weight: 700; color: var(--primary-2); }
+.dq-mlbl { font-size: 12px; line-height: 16px; color: #505A5F; }
+.dq-total .dq-mlbl { font-size: 14px; line-height: 19px; }
