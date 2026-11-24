@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0B4B66" />
+<title>Duplication Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <aside class="demo" id="demo" aria-labelledby="demo-title">
+    <h2 id="demo-title">Prototype controls</h2>
+    <p class="demo-note">Not part of the app. Switch states to see how each screen responds.</p>
+    <label for="demo-sync">Sync status</label>
+    <select id="demo-sync">
+      <option value="fresh">Up to date</option>
+      <option value="stale">Out of date</option>
+      <option value="incomplete">Incomplete</option>
+      <option value="offline">Offline</option>
+      <option value="uploadFailed">Upload failed</option>
+    </select>
+    <label for="demo-retry">When the worker retries</label>
+    <select id="demo-retry">
+      <option value="yes">Retry works</option>
+      <option value="no">Retry fails</option>
+    </select>
+    <label for="demo-gps">GPS</label>
+    <select id="demo-gps">
+      <option value="yes">Location captured</option>
+      <option value="no">Location not captured</option>
+    </select>
+    <p class="demo-stat">Waiting to upload: <b id="demo-pending">0</b></p>
+    <button id="demo-reset" type="button">Reset demo data</button>
+
+    <h3>Try these</h3>
+    <ul>
+      <li>Search <b>Mamadu</b> or <b>Fatma</b>: spelling variants still find the household.</li>
+      <li>Search <b>Fatou Camara</b>, register, continue: a household 35 m away has a similar name.</li>
+      <li>Open <b>Mohammed Diallo</b>, add <b>Ibrahim Diallo</b>, male, 0 years 9 months: one possible match.</li>
+      <li>Open <b>Seydou Kamara</b>, add <b>Kadija Kamara</b>, female, 0 years 10 months: two possible matches.</li>
+      <li>Open <b>Muhammad Bah</b>, add <b>Husain Bah</b>, male, 1 year 11 months: a weak match with a one-tap reason.</li>
+      <li>Take Action on <b>Aminata Diallo</b>: already vaccinated this round.</li>
+      <li>Set sync to <b>Out of date</b>, then search <b>Barry</b>: that household wasn’t downloaded.</li>
+    </ul>
+  </aside>
+
+  <main class="phone" id="phone" aria-live="polite"></main>
+
+  <script src="app.js"></script>
+</body>
+</html>
