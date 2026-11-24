@@ -144,9 +144,9 @@
 
   // ---------- S1 Flag queue ----------
   function sortedFlags() {
-    return [...store.flags].sort((x, y) =>
+    // A flag queue holds only flags waiting for review; a decided flag leaves the queue.
+    return store.flags.filter(f => f.status === "Open").sort((x, y) =>
       ((y.type === "delivery") - (x.type === "delivery")) ||
-      ((x.status === "Open" ? 0 : 1) - (y.status === "Open" ? 0 : 1)) ||
       (TIER_RANK[y.tier] - TIER_RANK[x.tier]));
   }
   function filteredFlags() {
@@ -154,12 +154,12 @@
     return sortedFlags().filter(f =>
       (!q || f.id.toLowerCase().includes(q) || f.title.toLowerCase().includes(q)) &&
       (!ui.area || f.area === ui.area) && (!ui.team || f.team === ui.team) &&
-      (!ui.collector || f.collector === ui.collector) && (!ui.status || f.status === ui.status));
+      (!ui.collector || f.collector === ui.collector));
   }
   function queueRows() {
     const rows = filteredFlags();
-    if (!rows.length) return `<tr class="empty-row"><td colspan="9">No flags match your filters. <button class="link" data-action="clear">Clear filters</button></td></tr>`;
-    return rows.map(f => `<tr class="${f.type === "delivery" && f.status === "Open" ? "is-alert" : ""}">
+    if (!rows.length) return `<tr class="empty-row"><td colspan="8">No flags match your filters. <button class="link" data-action="clear">Clear filters</button></td></tr>`;
+    return rows.map(f => `<tr class="${f.type === "delivery" ? "is-alert" : ""}">
         <td><span class="cell-strong">${esc(f.id)}</span><span class="cell-sub">${esc(f.raised)}</span></td>
         <td>${typeTag(f.type)}</td>
         <td>${tierTag(f.tier)}</td>
@@ -167,8 +167,7 @@
         <td>${esc(f.area)}</td>
         <td>${esc(f.team)}</td>
         <td>${esc(f.collector)}</td>
-        <td>${statusTag(f.status)}</td>
-        <td><a class="btn btn-secondary btn-sm" href="#/flags/${esc(f.id)}">${f.status === "Open" ? "Review" : "View"}</a></td>
+        <td><a class="btn btn-secondary btn-sm" href="#/flags/${esc(f.id)}">Review</a></td>
       </tr>`).join("");
   }
   function viewFlags() {
@@ -177,10 +176,9 @@
     return `${crumbs([["Home", "index.html"], ["Flag Queue"]])}
       ${head("Flag Queue", "Possible duplicates and double deliveries found after records sync are here. Delivery alerts come first, then flags by match strength. Open a flag to compare the records and decide.")}
       ${stats([
-        [open.length, "Open flags"],
-        [open.filter(f => f.type === "delivery").length, "Delivery alerts", true],
-        [all.filter(f => f.status === "Confirmed").length, "Confirmed duplicates"],
-        [all.filter(f => f.status === "Not a duplicate").length, "Not a duplicate"]
+        [open.length, "Flags to review"],
+        [open.filter(f => f.type === "delivery").length, "Possible double vaccinations", true],
+        [open.filter(f => f.type !== "delivery").length, "Possible duplicates"]
       ])}
       <div class="card">
         <div class="filters">
@@ -188,7 +186,6 @@
           ${select("f-area", "Area", ui.area, uniq(all.map(f => f.area)), "All areas")}
           ${select("f-team", "Team", ui.team, uniq(all.map(f => f.team)), "All teams")}
           ${select("f-collector", "Collector", ui.collector, uniq(all.map(f => f.collector)), "All collectors")}
-          ${select("f-status", "Status", ui.status, ["Open", "Confirmed", "Not a duplicate"], "All statuses")}
           <div class="filter-actions"><button class="link" data-action="clear">Clear</button></div>
         </div>
       </div>
@@ -196,7 +193,7 @@
         <div class="table-bar"><span id="flag-count">${n} flag${n === 1 ? "" : "s"}</span></div>
         <div class="table-wrap">
           <table class="data">
-            <thead><tr><th>Flag ID</th><th>Issue</th><th>Match</th><th>Records</th><th>Area</th><th>Team</th><th>Collector</th><th>Status</th><th><span class="sr-only">Action</span></th></tr></thead>
+            <thead><tr><th>Flag ID</th><th>Issue</th><th>Match</th><th>Records</th><th>Area</th><th>Team</th><th>Collector</th><th><span class="sr-only">Action</span></th></tr></thead>
             <tbody id="flag-rows">${queueRows()}</tbody>
           </table>
         </div>
@@ -402,7 +399,7 @@
     if (!b) return;
     const a = b.dataset.action;
     if (a === "help") return toast("Review delivery alerts first. Every decision needs a root cause.");
-    if (a === "clear") { Object.assign(ui, { q: "", area: "", team: "", collector: "", status: "" }); return route(); }
+    if (a === "clear") { Object.assign(ui, { q: "", area: "", team: "", collector: "" }); return route(); }
     if (a === "alias-tab") { ui.aliasTab = b.dataset.tab; return route(); }
     if (a === "alias") {
       const al = store.aliases.find(x => x.id === b.dataset.id); al.status = b.dataset.to; save(); route();
@@ -423,7 +420,7 @@
     }
   });
   document.addEventListener("input", e => {
-    const map = { "f-q": "q", "f-area": "area", "f-team": "team", "f-collector": "collector", "f-status": "status" };
+    const map = { "f-q": "q", "f-area": "area", "f-team": "team", "f-collector": "collector" };
     if (map[e.target.id]) { ui[map[e.target.id]] = e.target.value; refreshQueue(); }
     if (e.target.id === "root-cause") document.getElementById("cause-err").hidden = true;
     if (e.target.name === "decision") document.getElementById("decision-err").hidden = true;
