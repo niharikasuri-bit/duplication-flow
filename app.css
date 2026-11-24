@@ -634,3 +634,4 @@ body { display: flex; align-items: center; justify-content: center; min-height: 
 /* Household May Already Exist: member details in a secondary container */
 .alert-list .hh-members.secondary-container { margin-top: 12px; padding: 8px 12px; border-top: 1px solid var(--border); }
 .dialog.alert .nearby-use { width: 100%; margin: -12px 0 24px; }
+.hh-members li .match-tag { color: #0057BD; font-size: 12px; line-height: 16px; }

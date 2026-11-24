@@ -423,12 +423,12 @@
     const tagFor = name => (matchTag && name === matched ? `<span class="match-tag">${esc(matchTag)}</span>` : "");
     return `<li><article class="hh-card" aria-labelledby="hh-${h.id}">
       <div class="hh-top">
-        <h3 class="hh-name" id="hh-${h.id}">${highlight(h.head, q)}</h3>
+        <h3 class="hh-name" id="hh-${h.id}">${h.head === matched ? highlight(h.head, q) : esc(h.head)}</h3>
         ${tagFor(h.head)}
         ${showDistance ? `<span class="hh-dist">${ICON.pin}${h.m} m away</span>` : ""}
       </div>
       <p class="hh-sub">Household head · ${plural(h.members.length, "member")}</p>
-      ${kids.length ? `<ul class="hh-members${showDistance ? " secondary-container" : ""}">${kids.map(p => `<li class="${p.name === matched ? "is-match" : ""}"><span class="hh-member-name">${highlight(p.name, q)}${tagFor(p.name)}</span><span>${esc(p.gender)}, ${esc(ageLabel(p.age))}</span></li>`).join("")}</ul>` : ""}
+      ${kids.length ? `<ul class="hh-members${showDistance ? " secondary-container" : ""}">${kids.map(p => `<li class="${p.name === matched ? "is-match" : ""}"><span class="hh-member-name">${p.name === matched ? highlight(p.name, q) : esc(p.name)}${tagFor(p.name)}</span><span>${esc(p.gender)}, ${esc(ageLabel(p.age))}</span></li>`).join("")}</ul>` : ""}
       <button class="btn ${showDistance ? "btn-primary" : "btn-secondary"} card-btn" data-action="${action}" data-id="${h.id}" aria-describedby="hh-${h.id}">${esc(label)}</button>
     </article></li>`;
   }
@@ -437,7 +437,7 @@
     const t = tokens(q).map(w => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
     if (!t.length) return esc(name);
     const re = new RegExp(`\\b(${t.join("|")})`, "gi");
-    return name.split(re).map((part, i) => (i % 2 ? `<mark>${esc(part)}</mark>` : esc(part))).join("");
+    return name.split(re).map((part, i) => (i % 2 ? `<mark>${esc(part)}</mark>` : esc(part))).join("").replace(/<\/mark>(\s+)<mark>/g, "$1");
   }
 
   // ---------- Sync result (W1 + W11) ----------
@@ -762,7 +762,7 @@
       </div>`;
     }
     return `${meta}<p class="search-meta" role="status">${hits.length} ${hits.length === 1 ? "beneficiary" : "beneficiaries"} found</p>
-      <ul class="hh-list">${hits.map(r => householdCard(r.h, { matched: r.matched, matchTag: r.fuzzy ? "Similar spelling" : "", q })).join("")}</ul>
+      <ul class="hh-list">${hits.map(r => { const full = !r.fuzzy && tokens(q).every(t => tokens(r.matched).includes(t)); return householdCard(r.h, { matched: r.matched, matchTag: r.fuzzy ? "Similar spelling" : full ? "Exact match" : "", q: r.fuzzy ? "" : q }); }).join("")}</ul>
       <p class="none-line">Not in this list? Register a new beneficiary.</p>`;
   }
   // Register unlocks only once a search has run.
