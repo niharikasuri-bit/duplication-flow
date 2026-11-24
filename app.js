@@ -34,11 +34,13 @@
     individual: { name: "Individual Details", desc: "Add the details of the person you are registering." },
     matches:    { name: "Existing Matches", desc: "Select the record that matches the person you are registering." },
     reason:     { name: "Add as New Person", desc: "Tell us why this is a different person." },
+    reasonHH:   { name: "Create New Household", desc: "Tell us why this is a different household." },
     checklist:  { name: "Vaccination Checklist", desc: "Confirm the vaccination by completing the checklist." },
     success:    { name: "Vaccination Successful", desc: "Vaccination has been recorded successfully." }
   };
   // The individual form doubles as the head of household form while a household is being created.
-  const screenKey = () => (state.route === "individual" && state.draftHH ? "hoh" : state.route);
+  const screenKey = () => (state.route === "individual" && state.draftHH ? "hoh"
+    : state.route === "reason" && state.reasonFor === "household" ? "reasonHH" : state.route);
   const screen = () => SCREENS[screenKey()];
 
   // Alias groups: spelling variants the sound of a name hides (per country, starter list).
@@ -101,6 +103,8 @@
 
   const ID_TYPES = ["National ID", "Birth certificate", "Not available"];
   const NEW_PERSON_REASONS = ["Twin or sibling", "Different person with a similar name", "Checked with the caregiver", "Other"];
+  const NEW_HOUSEHOLD_REASONS = ["Different family with a similar name", "Checked with the household", "Household moved or split", "Other"];
+  const HEAD_MIN_MONTHS = 18 * 12;   // household head must be 18 or older
   const CHECKLIST = [
     { id: "chk-drops", label: "Two drops administered" },
     { id: "chk-finger", label: "Finger marked" }
@@ -143,6 +147,8 @@
     matches: [],              // [{ member, tier, same[], diff[] }]
     compareIdx: 0,
     compareOpen: false,
+    reasonFor: "person",      // W9a person | W9b household
+    hhMatch: null,            // nearest similar household when creating a household
     manyOpen: false,          // "N Matches Found" alert       // W7 alert open over Individual Details or the matches list
     reason: { why: "", supervisor: false },
     memberId: null,
@@ -553,6 +559,8 @@
           </div>
           <p class="member-sub"><span>${esc(p.gender || "Gender not recorded")}</span><span class="sep" aria-hidden="true"></span><span>${esc(ageLabel(p.age))}</span></p>
           ${statusChip(p)}
+          ${isChild(p) && p.status !== "done" && p.flag ? `<p class="card-warn">${ICON.warn}<span>May be registered twice. Your supervisor will check. You can still vaccinate.</span></p>` : ""}
+          ${isChild(p) && p.status !== "done" && !p.flag && !store.synced ? `<p class="card-warn">${ICON.warn}<span>Sync failed. Recent vaccinations may be missing. Ask the caregiver before you vaccinate.</span></p>` : ""}
           ${btn}
         </article></li>`;
       };
@@ -593,7 +601,7 @@
           </div>
           ${state.compareOpen ? compareDialogHtml() : ""}
           ${state.manyOpen ? manyDialogHtml() : ""}
-          ${state.matches.length ? quickReasonHtml() : ""}
+          ${state.matches.length || state.hhMatch ? quickReasonHtml() : ""}
           ${nearbyDialogHtml()}`,
         footer: `<button class="btn btn-primary" data-action="person-continue">Continue</button>`
       };
@@ -628,21 +636,24 @@
 
     // W9
     reason() {
-      const r = state.reason, err = state.errors["r-why"];
+      const r = state.reason, err = state.errors["r-why"], hhMode = state.reasonFor === "household";
       const names = state.matches.map(m => m.member.name);
+      const lookalike = hhMode
+        ? `${esc(state.person.name.trim())} looks like ${esc(state.hhMatch.matched)}, in a household ${state.hhMatch.m} m away.`
+        : `${esc(state.person.name.trim())} looks like ${esc(names.join(" and "))}, already in this household.`;
       return {
         tag: ASSIGNED_AREA,
-        body: `${title("Add as New Person")}
-          <p class="page-desc page-desc-2">${esc(state.person.name.trim())} looks like ${esc(names.join(" and "))}, already in this household.</p>
+        body: `${title(screen().name)}
+          <p class="page-desc page-desc-2">${lookalike}</p>
           <div class="card">
             <fieldset class="field radios ${err ? "has-error" : ""}" id="r-why-group" aria-describedby="r-why-err">
-              <legend>Why is this a different person?${reqMark(true)}</legend>
-              ${NEW_PERSON_REASONS.map(o => `<label class="radio"><input type="radio" name="r-why" value="${esc(o)}" ${o === r.why ? "checked" : ""}/>${esc(o)}</label>`).join("")}
+              <legend>${hhMode ? "Why is this a different household?" : "Why is this a different person?"}${reqMark(true)}</legend>
+              ${(hhMode ? NEW_HOUSEHOLD_REASONS : NEW_PERSON_REASONS).map(o => `<label class="radio"><input type="radio" name="r-why" value="${esc(o)}" ${o === r.why ? "checked" : ""}/>${esc(o)}</label>`).join("")}
               ${errorText("r-why", err)}
             </fieldset>
           </div>
           ${confirmDialogHtml()}`,
-        footer: `<button class="btn btn-primary" data-action="reason-submit">${ICON.personAdd}Add as New Person</button>`
+        footer: `<button class="btn btn-primary" data-action="reason-submit">${hhMode ? `${ICON.plus}Create New Household` : `${ICON.personAdd}Add as New Person`}</button>`
       };
     },
 
@@ -758,17 +769,33 @@
   }
 
   function quickReasonHtml() {
+    const hhMode = state.reasonFor === "household";
     return `<div class="dialog-backdrop" id="quick-dialog" hidden>
       <div class="dialog alert" role="dialog" aria-modal="true" aria-labelledby="quick-title" aria-describedby="quick-desc">
         <button class="dialog-close" data-action="close-quick" aria-label="Close">${ICON.close}</button>
-        <h2 class="dialog-title" id="quick-title">Add as New Person</h2>
-        <p class="dialog-desc" id="quick-desc">Why is this a different person?</p>
-        <div class="dialog-actions">${NEW_PERSON_REASONS.map(r => `<button class="btn btn-secondary" data-action="quick-reason" data-r="${esc(r)}">${esc(r)}</button>`).join("")}</div>
+        <h2 class="dialog-title" id="quick-title">${hhMode ? "Create New Household" : "Add as New Person"}</h2>
+        <p class="dialog-desc" id="quick-desc">${hhMode ? "Why is this a different household?" : "Why is this a different person?"}</p>
+        <div class="dialog-actions">${(hhMode ? NEW_HOUSEHOLD_REASONS : NEW_PERSON_REASONS).map(r => `<button class="btn btn-secondary" data-action="quick-reason" data-r="${esc(r)}">${esc(r)}</button>`).join("")}</div>
       </div>
     </div>`;
   }
 
   function confirmDialogHtml() {
+    if (state.reasonFor === "household") {
+      const x = state.hhMatch;
+      return `<div class="dialog-backdrop" id="confirm-dialog" hidden>
+      <div class="dialog alert" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-desc">
+        <button class="dialog-close" data-action="close-confirm" aria-label="Close">${ICON.close}</button>
+        ${ICON.alertWarn}
+        <h2 class="dialog-title" id="confirm-title">Household May Already Exist</h2>
+        <p class="dialog-desc" id="confirm-desc"><strong>${esc(x.matched)}</strong> lives in a household ${x.m} m away. Creating a household for <strong>${esc(state.person.name.trim())}</strong> may create a duplicate record. Do you want to create a new household anyway?</p>
+        <div class="dialog-actions">
+          <button class="btn btn-primary" data-action="close-confirm">Go Back</button>
+          <button class="btn btn-secondary" data-action="confirm-new">Create New Household Anyway</button>
+        </div>
+      </div>
+    </div>`;
+    }
     const m = state.matches[0];
     return `<div class="dialog-backdrop" id="confirm-dialog" hidden>
       <div class="dialog alert" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-desc">
@@ -1012,6 +1039,7 @@
     "open-hh"(btn) { state.hhId = btn.dataset.id; go("overview"); },
     register() {
       const hits = searchHouseholds(state.query.trim()) || [];
+      state.hhMatch = null;
       state.draftHH = { size: "1", searchTerm: state.query.trim(), candidates: hits.map(h => h.h.id) };
       store.log.push({ term: state.query.trim(), shown: hits.length, at: new Date().toISOString() }); save();
       nearby = [];
@@ -1036,19 +1064,20 @@
       toast("Opened the existing household. No new household created.");
     },
     // No, Create New Household: save the head and create the household.
-    "nearby-new"() { nearby = []; savePerson(); },
+    // Create New Household: weak match -> one-tap reason; strong -> W9b reason screen with a second confirm.
+    "nearby-new"() {
+      const top = nearby[0];
+      state.hhMatch = { head: top.h.head, matched: top.matched, m: top.h.m, tier: top.s >= 0.9 ? "Strong" : "Low" };
+      state.reasonFor = "household"; state.reason = { why: "", supervisor: false };
+      nearby = [];
+      render({ focusTitle: false });
+      if (state.hhMatch.tier === "Low") openDialog("quick-dialog"); else go("reason");
+    },
 
     // W5
     "add-member"() { state.person = blankPerson(); go("individual"); },
-    // W10 delivery check: clear → straight to the checklist; otherwise an alert on the household.
-    "take-action"(btn) {
-      state.memberId = btn.dataset.id;
-      const p = member();
-      deliveryAlert = p.status === "done" ? "served" : p.flag ? "flag" : !store.synced ? "sync" : "";
-      if (!deliveryAlert) return go("checklist");
-      render({ focusTitle: false });
-      document.querySelector("#delivery-dialog .btn-primary")?.focus();
-    },
+    // Layer 3 has no screen of its own: warnings sit on the member card, Take Action opens the checklist.
+    "take-action"(btn) { state.memberId = btn.dataset.id; go("checklist"); },
     unable() { toast("Recording a reason isn’t part of the prototype."); },
 
     // W6
@@ -1058,6 +1087,7 @@
       if (!p.dob && !p.years && !p.months) ageErr = "Enter the date of birth or age";
       else if (p.dob && !ageFromDob(p.dob)) ageErr = "Date of birth can’t be in the future";
       else if (Number(p.months) > 11) ageErr = "Months must be from 0 to 11";
+      else if (state.draftHH && personMonths(p) < HEAD_MIN_MONTHS) ageErr = "The household head must be 18 years or older";
       const ok = showErrors({
         "p-name": p.name.trim() ? "" : "Enter the name of the individual",
         "p-idtype": p.idType ? "" : "Select the ID type",
@@ -1074,6 +1104,7 @@
         if (nearby.length) return render({ focusTitle: false });
         return savePerson();
       }
+      state.reasonFor = "person";
       state.matches = hh().members.map(m => compare(m, p)).filter(Boolean).sort((a, b) => TIER_RANK[b.tier] - TIER_RANK[a.tier] || b.n - a.n);
       state.reason = { why: "", supervisor: false };
       if (!state.matches.length) return savePerson();
@@ -1103,7 +1134,7 @@
       toast(`${e.name} is already registered. No new record added.`);
     },
     "close-quick"() { closeDialog("quick-dialog"); },
-    "quick-reason"(btn) { savePerson({ override: { reason: btn.dataset.r, tier: "Low" } }); },
+    "quick-reason"(btn) { savePerson({ override: { reason: btn.dataset.r, tier: "Low", ...(state.reasonFor === "household" ? { household: state.hhMatch.head } : {}) } }); },
 
     // W9
     "reason-submit"() {
@@ -1112,6 +1143,7 @@
     },
     "close-confirm"() { closeDialog("confirm-dialog"); },
     "confirm-new"() {
+      if (state.reasonFor === "household") return savePerson({ override: { reason: state.reason.why, tier: state.hhMatch.tier, household: state.hhMatch.head } });
       savePerson({ override: { reason: state.reason.why, tier: topTier(), matched: state.matches.map(m => m.member.id) } });
     },
     "needs-check"() {

@@ -236,12 +236,15 @@
   function decisionCard(f, kind) {
     const done = f.status !== "Open";
     const causes = kind === "delivery" ? DELIVERY_CAUSES : ROOT_CAUSES;
-    const options = kind === "delivery"
-      ? ""
-      : `<fieldset class="decide"><legend class="section-label">Decision</legend>
-          ${[["Confirmed", "Confirm duplicate", "Mark both records as the same and link them. Both records are kept."],
-             ["Not a duplicate", "Not a duplicate", "This pair won’t be flagged again unless a record changes."],
-             ["Needs verification", "Needs verification", "Ask the field team to check the household."]]
+    const choices = kind === "delivery"
+      ? [["Confirmed", "Confirm double delivery", "The child was vaccinated twice this round."],
+         ["Not a duplicate", "Not a duplicate", "For example, the wrong member was marked as vaccinated."],
+         ["Needs verification", "Needs verification", "Ask the field team to check with the household."]]
+      : [["Confirmed", "Confirm duplicate", "Mark both records as the same and link them. Both records are kept."],
+         ["Not a duplicate", "Not a duplicate", "This pair won’t be flagged again unless a record changes."],
+         ["Needs verification", "Needs verification", "Ask the field team to check the household."]];
+    const options = `<fieldset class="decide"><legend class="section-label">Decision</legend>
+          ${choices
             .map(([v, l, s]) => `<label class="radio"><input type="radio" name="decision" value="${v}" ${f.status === v ? "checked" : ""} ${done ? "disabled" : ""}/><span>${l}<small>${s}</small></span></label>`).join("")}
           <p class="err" id="decision-err" hidden>Select a decision</p>
         </fieldset>`;
@@ -257,7 +260,7 @@
         <textarea class="input" id="comment" ${done ? "disabled" : ""}>${esc(f.comment || "")}</textarea>
       </div>
       ${done ? `<p class="done-note">${esc(f.status)}${f.rootCause ? ` · Root cause: ${esc(f.rootCause)}` : ""}</p>`
-        : `<div class="card-actions"><a class="btn btn-secondary" href="#/flags">Cancel</a><button class="btn btn-primary" data-action="${kind === "delivery" ? "mark-reviewed" : "save-decision"}" data-id="${esc(f.id)}">${kind === "delivery" ? "Mark as Reviewed" : "Save Decision"}</button></div>`}
+        : `<div class="card-actions"><a class="btn btn-secondary" href="#/flags">Cancel</a><button class="btn btn-primary" data-action="save-decision" data-id="${esc(f.id)}">Save Decision</button></div>`}
     </div>`;
   }
   function viewReview(f) {
@@ -295,7 +298,7 @@
   // ---------- S3 Delivery alert review ----------
   function viewAlert(f) {
     return `${crumbs([["Home", "index.html"], ["Flag Queue", "#/flags"], [f.id]])}
-      ${head("Review Delivery Alert", "The same child may have been vaccinated twice this round. Check both deliveries and tag the root cause.")}
+      ${head("Review Delivery Alert", "The same child may have been vaccinated twice this round. Check both deliveries, decide and tag the root cause.")}
       <div class="signals">${typeTag(f.type)}${tierTag(f.tier)}${statusTag(f.status)}</div>
       <div class="review-grid">
         <div>
@@ -416,7 +419,7 @@
       if (!decision || !cause) return (decision ? document.getElementById("root-cause") : document.querySelector('input[name="decision"]')).focus();
       f.status = decision; f.rootCause = cause; f.comment = document.getElementById("comment").value; save();
       location.hash = "#/flags";
-      toast({ Confirmed: `${f.id} confirmed as a duplicate. The records are linked.`, "Not a duplicate": `${f.id} marked not a duplicate. It won’t be raised again.`, "Needs verification": `${f.id} sent to the field team to verify.`, Reviewed: `${f.id} marked as reviewed.` }[decision]);
+      toast({ Confirmed: f.type === "delivery" ? `${f.id} confirmed as a double delivery.` : `${f.id} confirmed as a duplicate. The records are linked.`, "Not a duplicate": `${f.id} marked not a duplicate. It won’t be raised again.`, "Needs verification": `${f.id} sent to the field team to verify.`, Reviewed: `${f.id} marked as reviewed.` }[decision]);
     }
   });
   document.addEventListener("input", e => {
