@@ -393,17 +393,18 @@
 
   // Household card used on search results and in the nearby-household check.
   // showDistance: only in the nearby-household check (Layer 2); search results are name only.
-  function householdCard(h, { matched, fuzzy, q = "", action = "open-hh", label = "Open Household", note = "", showDistance = false } = {}) {
+  // matchTag ("Similar spelling" / "Similar name") sits right next to the matched person's name.
+  function householdCard(h, { matched, matchTag = "", q = "", action = "open-hh", label = "Open Household", showDistance = false } = {}) {
     const kids = h.members.filter(p => !p.head);
+    const tagFor = name => (matchTag && name === matched ? `<span class="match-tag">${esc(matchTag)}</span>` : "");
     return `<li><article class="hh-card" aria-labelledby="hh-${h.id}">
       <div class="hh-top">
         <h3 class="hh-name" id="hh-${h.id}">${highlight(h.head, q)}</h3>
+        ${tagFor(h.head)}
         ${showDistance ? `<span class="hh-dist">${ICON.pin}${h.m} m away</span>` : ""}
       </div>
       <p class="hh-sub">Household head · ${plural(h.members.length, "member")}</p>
-      ${kids.length ? `<ul class="hh-members">${kids.map(p => `<li><span>${highlight(p.name, q)}</span><span>${esc(p.gender)}, ${esc(ageLabel(p.age))}</span></li>`).join("")}</ul>` : ""}
-      ${fuzzy ? `<p class="hint">${ICON.info}Similar spelling: ${esc(matched)}</p>` : ""}
-      ${note ? `<p class="hint">${ICON.info}${esc(note)}</p>` : ""}
+      ${kids.length ? `<ul class="hh-members">${kids.map(p => `<li class="${p.name === matched ? "is-match" : ""}"><span class="hh-member-name">${highlight(p.name, q)}${tagFor(p.name)}</span><span>${esc(p.gender)}, ${esc(ageLabel(p.age))}</span></li>`).join("")}</ul>` : ""}
       <button class="btn btn-secondary card-btn" data-action="${action}" data-id="${h.id}" aria-describedby="hh-${h.id}">${esc(label)}</button>
     </article></li>`;
   }
@@ -736,7 +737,7 @@
       </div>`;
     }
     return `${meta}<p class="search-meta" role="status">${plural(hits.length, "household")} found</p>
-      <ul class="hh-list">${hits.map(r => householdCard(r.h, { matched: r.matched, fuzzy: r.fuzzy, q })).join("")}</ul>
+      <ul class="hh-list">${hits.map(r => householdCard(r.h, { matched: r.matched, matchTag: r.fuzzy ? "Similar spelling" : "", q })).join("")}</ul>
       <p class="none-line">Not in this list? Register a new beneficiary.</p>`;
   }
   // Register unlocks only once a search has run.
@@ -758,7 +759,7 @@
           <button class="dialog-close" data-action="close-nearby" aria-label="Close">${ICON.close}</button>
         </div>
         <p class="dialog-desc">${plural(nearby.length, "household")} within ${NEARBY_M} m ${nearby.length === 1 ? "has" : "have"} someone with a similar name.</p>
-        <ul class="hh-list dialog-scroll">${nearby.map(n => householdCard(n.h, { action: "nearby-open", label: "Same Household", note: `Similar name: ${n.matched}`, showDistance: true })).join("")}</ul>
+        <ul class="hh-list dialog-scroll">${nearby.map(n => householdCard(n.h, { action: "nearby-open", label: "Same Household", matched: n.matched, matchTag: "Similar name", showDistance: true })).join("")}</ul>
         <div class="dialog-actions"><button class="btn btn-primary" data-action="nearby-new">No, Create New Household</button></div>
       </div>
     </div>`;

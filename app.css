@@ -453,6 +453,12 @@ body { display: flex; align-items: center; justify-content: center; min-height: 
 .hh-members { list-style: none; margin-top: 10px; border-top: 1px solid var(--border); padding-top: 8px; display: flex; flex-direction: column; gap: 6px; }
 .hh-members li { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; line-height: 19px; }
 .hh-members li span:last-child { color: var(--text-2); text-align: right; }
+.hh-top { flex-wrap: wrap; align-items: center; }
+.hh-top .hh-dist { margin-left: auto; }
+.hh-members li { flex-direction: column; gap: 0; }
+.hh-members li span:last-child { text-align: left; font-size: 12px; line-height: 16px; }
+.hh-member-name { display: flex; align-items: center; gap: 6px; font-size: 14px; line-height: 19px; color: var(--text); }
+.match-tag { display: inline-flex; align-items: center; height: 20px; padding: 0 6px; border-radius: 4px; background: #E6EEF8; color: #0057BD; font-size: 12px; line-height: 16px; font-weight: 500; white-space: nowrap; }
 .hint { margin-top: 10px; display: flex; gap: 6px; align-items: flex-start; font-size: 14px; line-height: 19px; color: var(--primary-2); }
 .hint svg { width: 16px; height: 16px; flex: 0 0 16px; margin-top: 2px; }
 .card-btn { margin-top: 12px; height: 36px; font-size: 16px; }
