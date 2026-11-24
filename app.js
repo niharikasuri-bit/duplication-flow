@@ -428,8 +428,8 @@
         ${showDistance ? `<span class="hh-dist">${ICON.pin}${h.m} m away</span>` : ""}
       </div>
       <p class="hh-sub">Household head · ${plural(h.members.length, "member")}</p>
-      ${kids.length ? `<ul class="hh-members">${kids.map(p => `<li class="${p.name === matched ? "is-match" : ""}"><span class="hh-member-name">${highlight(p.name, q)}${tagFor(p.name)}</span><span>${esc(p.gender)}, ${esc(ageLabel(p.age))}</span></li>`).join("")}</ul>` : ""}
-      <button class="btn btn-secondary card-btn" data-action="${action}" data-id="${h.id}" aria-describedby="hh-${h.id}">${esc(label)}</button>
+      ${kids.length ? `<ul class="hh-members${showDistance ? " secondary-container" : ""}">${kids.map(p => `<li class="${p.name === matched ? "is-match" : ""}"><span class="hh-member-name">${highlight(p.name, q)}${tagFor(p.name)}</span><span>${esc(p.gender)}, ${esc(ageLabel(p.age))}</span></li>`).join("")}</ul>` : ""}
+      <button class="btn ${showDistance ? "btn-primary" : "btn-secondary"} card-btn" data-action="${action}" data-id="${h.id}" aria-describedby="hh-${h.id}">${esc(label)}</button>
     </article></li>`;
   }
 
