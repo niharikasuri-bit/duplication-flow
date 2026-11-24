@@ -87,3 +87,14 @@
 .dq-mlbl { font-size: 12px; line-height: 16px; color: #505A5F; }
 .dq-total .dq-mlbl { font-size: 14px; line-height: 19px; }
 .dq-reason-label { font-size: 12px; line-height: 16px; letter-spacing: 0; text-transform: none; }
+
+/* Home card hierarchy: total, then split, then progress */
+.dq-big { margin-top: 12px; display: flex; align-items: baseline; gap: 8px; }
+.dq-big-num { font-family: 'Roboto Condensed', sans-serif; font-size: 40px; line-height: 44px; font-weight: 700; color: var(--primary-2); }
+.dq-big-lbl { font-size: 16px; line-height: 22px; color: var(--text-2); }
+.dq-split { margin: 12px 0 16px; display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid #E4E4E4; border-bottom: 1px solid #E4E4E4; }
+.dq-split > div { padding: 10px 8px; display: flex; flex-direction: column; gap: 2px; }
+.dq-split > div + div { border-left: 1px solid #E4E4E4; }
+.dq-split > div:first-child { padding-left: 0; }
+.dq-split dd { font-size: 20px; line-height: 24px; font-weight: 700; color: var(--text); }
+.dq-split dt { font-size: 12px; line-height: 16px; color: #505A5F; }
