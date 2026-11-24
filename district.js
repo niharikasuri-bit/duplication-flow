@@ -207,7 +207,7 @@
   function possibleCause(f) {
     const failed = f.type === "delivery" ? f.deliveries.map((d, i) => d.failed ? [i + 1, d.sync] : null).filter(Boolean) : f.syncFailed ? [[2, f.b.sync]] : [];
     if (!failed.length) return "";
-    return failed.map(([n, sync]) => `<div class="cause-row"><dt>Possible cause</dt><dd><span class="cause-val"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>Sync failed for record ${n}</span><span class="cause-sub">Saved while the phone was not synced${lastSync(sync) ? `. Last synced ${lastSync(sync)}` : ""}.</span></dd></div>`).join("");
+    return failed.map(([n, sync]) => `<div class="cause-row"><dt>Possible cause</dt><dd><span class="cause-val"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>Sync failed for record ${n}</span></dd></div>`).join("");
   }
   function syncNotice(f) {
     const items = f.type === "delivery"
