@@ -291,7 +291,9 @@
     if (genderKnown) (sameGender ? same : diff).push(sameGender ? "Same gender" : "Different gender");
     if (mobileSame) same.push("Same mobile number");
     if (idSame) same.push("Same ID number");
-    return { member: existing, tier, n, same, diff };
+    // Match percentage for the "N% Match Found" bar: name carries most weight, then age and gender.
+    const pct = Math.min(99, Math.round(n * 60 + (diffM === 0 ? 20 : ageOk ? 15 : ageClose ? 5 : 0) + (!genderKnown ? 10 : sameGender ? 20 : 0) - (idSame ? -20 : 0)));
+    return { member: existing, tier, n, same, diff, pct };
   }
   const TIER_RANK = { Definite: 3, Strong: 2, Low: 1 };
   const topTier = () => state.matches.reduce((t, m) => (TIER_RANK[m.tier] > TIER_RANK[t] ? m.tier : t), "Low");
@@ -635,10 +637,8 @@
               ${errorText("r-why", err)}
             </fieldset>
           </div>
-          <p class="or-line">Not sure? Choose Needs Supervisor Check. The person is added and your supervisor checks the records.</p>
           ${confirmDialogHtml()}`,
-        footer: `<button class="btn btn-primary" data-action="reason-submit">${ICON.personAdd}Add as New Person</button>
-          <button class="btn btn-secondary" data-action="needs-check">Needs Supervisor Check</button>`
+        footer: `<button class="btn btn-primary" data-action="reason-submit">${ICON.personAdd}Add as New Person</button>`
       };
     },
 
@@ -692,10 +692,7 @@
         ${ICON.alertWarn}
         <h2 class="dialog-title" id="pm-title">Possible Match Found</h2>
         <p class="dialog-desc" id="pm-desc">We found an existing registration that may belong to this person. Review the details to confirm.</p>
-        <ul class="alert-reasons" aria-label="Why this may be the same person">
-          ${m.same.map(r => `<li>${ICON.ok}<span>${esc(r)}</span></li>`).join("")}
-          ${m.diff.map(r => `<li class="is-diff">${ICON.info}<span>${esc(r)}</span></li>`).join("")}
-        </ul>
+        <p class="match-bar">${m.pct}% Match Found</p>
         <table class="pm-table">
           <caption class="sr-only">Existing record compared with this registration</caption>
           <thead><tr>

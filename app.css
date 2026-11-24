@@ -598,6 +598,7 @@ body { display: flex; align-items: center; justify-content: center; min-height: 
 .dialog.alert .dialog-actions { position: sticky; bottom: -16px; margin: 0 -16px -16px; padding: 12px 16px 16px; background: var(--paper); }
 #quick-dialog .dialog-actions { position: static; margin: 0; padding: 0; }
 #quick-dialog .btn { height: auto; min-height: 40px; padding: 8px 12px; font-size: 16px; line-height: 22px; }
+.match-bar { margin: -8px 0 16px; padding: 8px 12px; background: #E5F1EC; border: 1px solid #8DB8A3; border-radius: 20px; font-size: 16px; line-height: 22px; font-weight: 500; color: #1F5E3F; }
 .alert-list { text-align: left; margin-bottom: 24px; }
 .alert-list .hh-card { border: 1px solid var(--border); box-shadow: none; }
 
