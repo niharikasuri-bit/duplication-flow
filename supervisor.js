@@ -9,21 +9,38 @@
 (function () {
   "use strict";
 
-  const STORE_KEY = "duplication-supervisor-v8";
+  const STORE_KEY = "duplication-supervisor-v9";
   // District supervisor responses, shared with the desktop supervisor (worker → district supervisor → supervisor).
-  const DS_KEY = "duplication-ds-responses-v2";
+  const DS_KEY = "duplication-ds-responses-v3";
   // Flags the district supervisor has already reviewed. Only these reach the supervisor.
   const SEED_DS = () => ({
-    "FLG-1040": { decision: "Confirmed", reason: "Area overlap", comment: "Two teams covered Muhammad Bah’s area on the same day.", at: "Today, 11:05" },
-    "FLG-1038": { decision: "Not a duplicate", reason: "Other", comment: "Twins. The caregiver showed both birth cards.", at: "Today, 10:40" },
-    "FLG-1036": { decision: "Confirmed", reason: "Spelling", comment: "Same child, name typed two ways.", at: "Today, 10:12" },
-    "FLG-1035": { decision: "Not a duplicate", reason: "Other", comment: "Different families, the heads are cousins.", at: "Yesterday, 17:30" },
-    "FLG-1024": { decision: "Confirmed", reason: "Area overlap", comment: "", at: "Yesterday, 16:05" }
+    "FLG-1040": { decision: "Confirmed", reason: "Two teams visited the same household", comment: "Two teams covered Muhammad Bah’s area on the same day.", at: "Today, 11:05" },
+    "FLG-1038": { decision: "Not a duplicate", reason: "Twins or siblings", comment: "The caregiver showed both birth cards.", at: "Today, 10:40" },
+    "FLG-1036": { decision: "Confirmed", reason: "Same person, name spelled differently", comment: "", at: "Today, 10:12" },
+    "FLG-1035": { decision: "Not a duplicate", reason: "Different families living close by", comment: "The heads are cousins.", at: "Yesterday, 17:30" },
+    "FLG-1024": { decision: "Confirmed", reason: "Two teams visited the same household", comment: "", at: "Yesterday, 16:05" }
   });
   const dsResponse = id => { let ds = null; try { ds = JSON.parse(localStorage.getItem(DS_KEY)); } catch (e) { /* private mode */ } return (ds || SEED_DS())[id]; };
   const DS_LABEL = (f, d) => d === "Confirmed" ? (f.type === "delivery" ? "Confirmed double vaccination" : "Confirmed duplicate") : "Not a duplicate";
 
   const TIER_RANK = { Definite: 3, Strong: 2, Low: 1 };
+  // Reasons for the decision depend on the kind of flag and on the decision.
+  const DECISION_REASONS = {
+    household: {
+      Confirmed: ["Same family registered twice", "Head’s name spelled differently", "Two teams visited the same household", "Registered while the phone was not synced", "Other"],
+      "Not a duplicate": ["Different families living close by", "Heads have similar names", "Household moved or split", "Other"]
+    },
+    individual: {
+      Confirmed: ["Same person, name spelled differently", "Same person, details entered differently", "Registered while the phone was not synced", "Other"],
+      "Not a duplicate": ["Twins or siblings", "Different people with similar names", "Caregiver confirmed they are different", "Other"]
+    },
+    delivery: {
+      Confirmed: ["Same child vaccinated twice", "Vaccinated while the phone was not synced", "Two teams visited the same household", "Other"],
+      "Not a duplicate": ["Different children", "Wrong child marked as vaccinated", "Other"]
+    }
+  };
+  const reasonsFor = (f, d) => (DECISION_REASONS[f.type] || DECISION_REASONS.individual)[d] || [];
+  const reasonOptions = (f, d, sel) => d ? `<option value="">Select</option>${reasonsFor(f, d).map(c => `<option ${sel === c ? "selected" : ""}>${esc(c)}</option>`).join("")}` : `<option value="">Choose a decision first</option>`;
   const ROOT_CAUSES = ["Sync failed", "Spelling", "Info mismatch", "Area overlap", "Other"];
   const DELIVERY_CAUSES = ["Sync failed", "Area overlap", "Other"];
 
@@ -91,13 +108,13 @@
     },
     {
       id: "FLG-1031", type: "individual", tier: "Definite", status: "Confirmed", area: "Solimbo", team: "Team 1", collector: "A. Sesay", raised: "20 Nov 2026", source: "Worker added as new despite a match",
-      title: "Mariama Camara and Mariatu Camara", household: "Fatoumata Camara", signals: ["Same ID number", "Similar name", "Same age"], rootCause: "Spelling",
+      title: "Mariama Camara and Mariatu Camara", household: "Fatoumata Camara", signals: ["Same ID number", "Similar name", "Same age"], rootCause: "Same person, name spelled differently",
       a: { id: "IND-50211", name: "Mariama Camara", gender: "Female", age: "4 years 0 months", dob: "12/11/2022", mobile: "–", idNo: "BC-77120", by: "A. Sesay (Team 1)", at: "12 Nov 2026", sync: "Succeeded" },
       b: { id: "IND-51980", name: "Mariatu Camara", gender: "Female", age: "4 years 0 months", dob: "12/11/2022", mobile: "–", idNo: "BC-77120", by: "M. Kargbo (Team 1)", at: "19 Nov 2026", sync: "Succeeded" }
     },
     {
       id: "FLG-1027", type: "individual", tier: "Strong", status: "Not a duplicate", area: "Solimbo", team: "Team 1", collector: "A. Sesay", raised: "18 Nov 2026", source: "Worker added as new despite a match",
-      title: "Ibrahima Diallo and Ibrahim Diallo", household: "Mohammed Diallo", signals: ["Similar name", "Age within 1 month", "Same gender"], reason: "Twin or sibling", rootCause: "Other",
+      title: "Ibrahima Diallo and Ibrahim Diallo", household: "Mohammed Diallo", signals: ["Similar name", "Age within 1 month", "Same gender"], reason: "Twin or sibling", rootCause: "Twins or siblings",
       a: { id: "IND-49870", name: "Ibrahima Diallo", gender: "Male", age: "0 years 8 months", dob: "24/03/2026", mobile: "–", idNo: "–", by: "A. Sesay (Team 1)", at: "02 Nov 2026", sync: "Succeeded" },
       b: { id: "IND-51203", name: "Ibrahim Diallo", gender: "Male", age: "0 years 9 months", dob: "24/02/2026", mobile: "–", idNo: "–", by: "A. Sesay (Team 1)", at: "18 Nov 2026", sync: "Succeeded" }
     },
@@ -353,7 +370,7 @@
       ${options}
       <div class="field">
         <label for="root-cause">Reason for decision</label>
-        <select class="input" id="root-cause" ${done ? "disabled" : ""}><option value="">Select</option>${causes.map(c => `<option ${f.rootCause === c ? "selected" : ""}>${c}</option>`).join("")}</select>
+        <select class="input" id="root-cause" data-type="${f.type}" ${done ? "disabled" : ""}>${reasonOptions(f, done ? f.status : "", f.rootCause)}</select>
         <p class="err" id="cause-err" hidden>Select a reason for the decision</p>
       </div>
       <div class="field">
@@ -625,7 +642,11 @@
     const map = { "f-q": "q", "f-area": "area", "f-team": "team", "f-collector": "collector" };
     if (map[e.target.id]) { ui[map[e.target.id]] = e.target.value; refreshQueue(); }
     if (e.target.id === "root-cause") document.getElementById("cause-err").hidden = true;
-    if (e.target.name === "decision") document.getElementById("decision-err").hidden = true;
+    if (e.target.name === "decision") {
+      document.getElementById("decision-err").hidden = true;
+      const sel = document.getElementById("root-cause"), f = store.flags.find(x => x.type === sel.dataset.type) || { type: sel.dataset.type };
+      sel.innerHTML = reasonOptions(f, e.target.value, "");
+    }
   });
 
   route();

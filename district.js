@@ -12,18 +12,34 @@
  */
 (() => {
   "use strict";
-  const STORE_KEY = "duplication-district-v4";
+  const STORE_KEY = "duplication-district-v5";
   // District supervisor responses, shared with the desktop supervisor (worker → district supervisor → supervisor).
-  const DS_KEY = "duplication-ds-responses-v2";
+  const DS_KEY = "duplication-ds-responses-v3";
   // Flags the district supervisor has already reviewed. Only these reach the supervisor.
   const SEED_DS = () => ({
-    "FLG-1040": { decision: "Confirmed", reason: "Area overlap", comment: "Two teams covered Muhammad Bah’s area on the same day.", at: "Today, 11:05" },
-    "FLG-1038": { decision: "Not a duplicate", reason: "Other", comment: "Twins. The caregiver showed both birth cards.", at: "Today, 10:40" },
-    "FLG-1036": { decision: "Confirmed", reason: "Spelling", comment: "Same child, name typed two ways.", at: "Today, 10:12" },
-    "FLG-1035": { decision: "Not a duplicate", reason: "Other", comment: "Different families, the heads are cousins.", at: "Yesterday, 17:30" },
-    "FLG-1024": { decision: "Confirmed", reason: "Area overlap", comment: "", at: "Yesterday, 16:05" }
+    "FLG-1040": { decision: "Confirmed", reason: "Two teams visited the same household", comment: "Two teams covered Muhammad Bah’s area on the same day.", at: "Today, 11:05" },
+    "FLG-1038": { decision: "Not a duplicate", reason: "Twins or siblings", comment: "The caregiver showed both birth cards.", at: "Today, 10:40" },
+    "FLG-1036": { decision: "Confirmed", reason: "Same person, name spelled differently", comment: "", at: "Today, 10:12" },
+    "FLG-1035": { decision: "Not a duplicate", reason: "Different families living close by", comment: "The heads are cousins.", at: "Yesterday, 17:30" },
+    "FLG-1024": { decision: "Confirmed", reason: "Two teams visited the same household", comment: "", at: "Yesterday, 16:05" }
   });
 
+  // Reasons for the decision depend on the kind of flag and on the decision.
+  const DECISION_REASONS = {
+    household: {
+      Confirmed: ["Same family registered twice", "Head’s name spelled differently", "Two teams visited the same household", "Registered while the phone was not synced", "Other"],
+      "Not a duplicate": ["Different families living close by", "Heads have similar names", "Household moved or split", "Other"]
+    },
+    individual: {
+      Confirmed: ["Same person, name spelled differently", "Same person, details entered differently", "Registered while the phone was not synced", "Other"],
+      "Not a duplicate": ["Twins or siblings", "Different people with similar names", "Caregiver confirmed they are different", "Other"]
+    },
+    delivery: {
+      Confirmed: ["Same child vaccinated twice", "Vaccinated while the phone was not synced", "Two teams visited the same household", "Other"],
+      "Not a duplicate": ["Different children", "Wrong child marked as vaccinated", "Other"]
+    }
+  };
+  const reasonsFor = (f, d) => (DECISION_REASONS[f.type] || DECISION_REASONS.individual)[d] || [];
   const ROOT_CAUSES = ["Sync failed", "Spelling", "Info mismatch", "Area overlap", "Other"];
   const TIER_RANK = { Definite: 3, Strong: 2, Low: 1 };
   const ISSUE = { delivery: "Possible double vaccination", household: "Possible duplicate household", individual: "Possible duplicate person" };
@@ -93,13 +109,13 @@
     },
     {
       id: "FLG-1031", type: "individual", tier: "Definite", status: "Confirmed", area: "Solimbo", team: "Team 1", collector: "A. Sesay", raised: "20 Nov 2026", source: "Worker added as new despite a match",
-      title: "Mariama Camara and Mariatu Camara", household: "Fatoumata Camara", signals: ["Same ID number", "Similar name", "Same age"], rootCause: "Spelling",
+      title: "Mariama Camara and Mariatu Camara", household: "Fatoumata Camara", signals: ["Same ID number", "Similar name", "Same age"], rootCause: "Same person, name spelled differently",
       a: { id: "IND-50211", name: "Mariama Camara", gender: "Female", age: "4 years 0 months", dob: "12/11/2022", mobile: "–", idNo: "BC-77120", by: "A. Sesay (Team 1)", at: "12 Nov 2026", sync: "Succeeded" },
       b: { id: "IND-51980", name: "Mariatu Camara", gender: "Female", age: "4 years 0 months", dob: "12/11/2022", mobile: "–", idNo: "BC-77120", by: "M. Kargbo (Team 1)", at: "19 Nov 2026", sync: "Succeeded" }
     },
     {
       id: "FLG-1027", type: "individual", tier: "Strong", status: "Not a duplicate", area: "Solimbo", team: "Team 1", collector: "A. Sesay", raised: "18 Nov 2026", source: "Worker added as new despite a match",
-      title: "Ibrahima Diallo and Ibrahim Diallo", household: "Mohammed Diallo", signals: ["Similar name", "Age within 1 month", "Same gender"], reason: "Twin or sibling", rootCause: "Other",
+      title: "Ibrahima Diallo and Ibrahim Diallo", household: "Mohammed Diallo", signals: ["Similar name", "Age within 1 month", "Same gender"], reason: "Twin or sibling", rootCause: "Twins or siblings",
       a: { id: "IND-49870", name: "Ibrahima Diallo", gender: "Male", age: "0 years 8 months", dob: "24/03/2026", mobile: "–", idNo: "–", by: "A. Sesay (Team 1)", at: "02 Nov 2026", sync: "Succeeded" },
       b: { id: "IND-51203", name: "Ibrahim Diallo", gender: "Male", age: "0 years 9 months", dob: "24/02/2026", mobile: "–", idNo: "–", by: "A. Sesay (Team 1)", at: "18 Nov 2026", sync: "Succeeded" }
     },
@@ -291,7 +307,7 @@
         <div class="card">
           <fieldset class="radios" id="cause-group" aria-describedby="cause-err">
             <legend class="field-label">Reason for decision<span class="req">*</span></legend>
-            ${(f.type === "delivery" ? DELIVERY_CAUSES : ROOT_CAUSES).map(c => `<label class="radio"><input type="radio" name="cause" value="${esc(c)}" ${state.cause === c ? "checked" : ""}/>${esc(c)}</label>`).join("")}
+            ${reasonsFor(f, state.decision).map(c => `<label class="radio"><input type="radio" name="cause" value="${esc(c)}" ${state.cause === c ? "checked" : ""}/>${esc(c)}</label>`).join("")}
           </fieldset>
           <p class="field-error" id="cause-err" hidden>Select a reason for the decision</p>
           <div class="field dq-comment">
