@@ -571,7 +571,6 @@
         body: `${title(screen().name)}
           <div class="card">
             ${textField({ id: "p-name", label: state.draftHH ? "Name of the household head" : "Name of the individual", value: p.name, required: true })}
-            <label class="checkbox head-check"><input type="checkbox" id="p-head" ${p.isHead ? "checked" : ""} ${state.draftHH ? "disabled" : ""}/><span class="box">${ICON.tick}</span>Head of household</label>
             ${selectField({ id: "p-idtype", label: "ID type", value: p.idType, options: ID_TYPES, required: true })}
             <div id="p-idnumber-wrap" ${p.idType === "Not available" ? "hidden" : ""}>${textField({ id: "p-idnumber", label: "ID number", value: p.idNumber, required: true })}</div>
             ${dobAgeField(p)}
@@ -1138,7 +1137,6 @@
   $phone.addEventListener("input", e => {
     const t = e.target;
     if (t.id === "search-input") { state.query = t.value; refreshSearch(); return; }
-    if (t.id === "p-head") { state.person.isHead = t.checked; return; }
     const key = t.type === "radio" ? t.name : t.id;
     if (FIELD_MAP[key]) { FIELD_MAP[key](t.value); clearError(key); }
     if (key === "p-idtype") document.getElementById("p-idnumber-wrap").hidden = t.value === "Not available";
@@ -1156,7 +1154,6 @@
     }
     if (["p-dob", "p-years", "p-months"].includes(key)) clearError("p-age");
   });
-  $phone.addEventListener("change", e => { if (e.target.id === "p-head") state.person.isHead = e.target.checked; });
 
   document.addEventListener("keydown", e => {
     if (e.key !== "Escape") return;
