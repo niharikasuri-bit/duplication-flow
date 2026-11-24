@@ -520,12 +520,9 @@
               ${errorText("hh-size", err)}
             </div>
             <div class="field coords-field">
-              <p class="field-label">Household coordinates</p>
-              <div class="latlng">
-                <div><label class="field-label" for="hh-lat">Latitude</label><input class="input" id="hh-lat" value="8.48402" disabled /></div>
-                <div><label class="field-label" for="hh-lng">Longitude</label><input class="input" id="hh-lng" value="-13.22994" disabled /></div>
-              </div>
-              <p class="gps">${ICON.gps}Captured automatically. Accuracy 6 m</p>
+              <label class="field-label" for="hh-coords">Household coordinates</label>
+              <input class="input" id="hh-coords" value="8.48402, -13.22994" disabled aria-describedby="hh-coords-help" />
+              <p class="gps" id="hh-coords-help">${ICON.gps}Captured automatically. Accuracy 6 m</p>
             </div>
           </div>`,
         footer: `<button class="btn btn-primary" data-action="hh-continue">Continue</button>`
