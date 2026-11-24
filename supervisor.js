@@ -10,7 +10,7 @@
 (function () {
   "use strict";
 
-  const STORE_KEY = "duplication-supervisor-v1";
+  const STORE_KEY = "duplication-supervisor-v2";
   const TIER_RANK = { Definite: 3, Strong: 2, Low: 1 };
   const ROOT_CAUSES = ["Sync failed", "Spelling", "Info mismatch", "Area overlap", "Other"];
   const DELIVERY_CAUSES = ["Sync failed", "Area overlap", "Other"];
@@ -83,8 +83,8 @@
       b: { id: "IND-51203", name: "Ibrahim Diallo", gender: "Male", age: "0 years 9 months", dob: "24/02/2026", mobile: "–", idNo: "–", by: "A. Sesay (Team 1)", at: "18 Nov 2026", sync: "Succeeded" }
     },
     {
-      id: "FLG-1024", type: "household", tier: "Strong", status: "Needs verification", area: "Makeni Road", team: "Team 4", collector: "K. Sesay", raised: "17 Nov 2026",
-      title: "Seydou Kamara and Saidu Kamara", distance: 22, signals: ["Similar head name", "22 m apart", "1 member matches"], rootCause: "Area overlap",
+      id: "FLG-1024", type: "household", tier: "Strong", status: "Open", area: "Makeni Road", team: "Team 4", collector: "K. Sesay", raised: "17 Nov 2026",
+      title: "Seydou Kamara and Saidu Kamara", distance: 22, signals: ["Similar head name", "22 m apart", "1 member matches"],
       a: { id: "HH-18440", head: "Seydou Kamara", coords: "8.48650, -13.22780", members: 3, by: "A. Sesay (Team 1)", at: "03 Nov 2026", sync: "Succeeded" },
       b: { id: "HH-20112", head: "Saidu Kamara", coords: "8.48662, -13.22795", members: 2, by: "K. Sesay (Team 4)", at: "17 Nov 2026", sync: "Succeeded" },
       pairs: [{ a: "Kadiatou Kamara, F, 0 years 10 months", b: "Kadija Kamara, F, 0 years 10 months", match: "Strong" }],
@@ -127,7 +127,7 @@
   const tag = (text, kind) => `<span class="tag tag-${kind}">${esc(text)}</span>`;
   const tierTag = t => tag(t, { Definite: "error", Strong: "warning", Low: "success" }[t]);
   const typeTag = t => (t === "delivery" ? tag("Delivery alert", "error") : tag(t === "household" ? "Household" : "Individual", "neutral"));
-  const statusTag = s => tag(s, { Open: "info", Confirmed: "success", "Not a duplicate": "neutral", "Needs verification": "warning", Reviewed: "success", Suggested: "info", Approved: "success", Rejected: "neutral" }[s] || "neutral");
+  const statusTag = s => tag(s, { Open: "info", Confirmed: "success", "Not a duplicate": "neutral", Suggested: "info", Approved: "success", Rejected: "neutral" }[s] || "neutral");
   const crumbs = items => `<nav class="crumbs" aria-label="Breadcrumb">${items.map((it, i) => (i < items.length - 1 ? `<a href="${it[1]}">${esc(it[0])}</a><span aria-hidden="true">/</span>` : `<span aria-current="page">${esc(it[0])}</span>`)).join("")}</nav>`;
   const head = (title, desc, actions = "") => `<div class="page-head"><div><h1 class="page-title">${esc(title)}</h1><p class="page-desc">${esc(desc)}</p></div>${actions ? `<div class="head-actions">${actions}</div>` : ""}</div>`;
   const stats = list => `<div class="stats">${list.map(([n, l, alert]) => `<div class="stat ${alert ? "is-alert" : ""}"><b>${esc(n)}</b><span>${esc(l)}</span></div>`).join("")}</div>`;
@@ -186,7 +186,7 @@
           ${select("f-area", "Area", ui.area, uniq(all.map(f => f.area)), "All areas")}
           ${select("f-team", "Team", ui.team, uniq(all.map(f => f.team)), "All teams")}
           ${select("f-collector", "Collector", ui.collector, uniq(all.map(f => f.collector)), "All collectors")}
-          ${select("f-status", "Status", ui.status, ["Open", "Confirmed", "Not a duplicate", "Needs verification", "Reviewed"], "All statuses")}
+          ${select("f-status", "Status", ui.status, ["Open", "Confirmed", "Not a duplicate"], "All statuses")}
           <div class="filter-actions"><button class="link" data-action="clear">Clear</button></div>
         </div>
       </div>
@@ -238,11 +238,9 @@
     const causes = kind === "delivery" ? DELIVERY_CAUSES : ROOT_CAUSES;
     const choices = kind === "delivery"
       ? [["Confirmed", "Confirm double delivery", "The child was vaccinated twice this round."],
-         ["Not a duplicate", "Not a duplicate", "For example, the wrong member was marked as vaccinated."],
-         ["Needs verification", "Needs verification", "Ask the field team to check with the household."]]
+         ["Not a duplicate", "Not a duplicate", "For example, the wrong member was marked as vaccinated."]]
       : [["Confirmed", "Confirm duplicate", "Mark both records as the same and link them. Both records are kept."],
-         ["Not a duplicate", "Not a duplicate", "This pair won’t be flagged again unless a record changes."],
-         ["Needs verification", "Needs verification", "Ask the field team to check the household."]];
+         ["Not a duplicate", "Not a duplicate", "This pair won’t be flagged again unless a record changes."]];
     const options = `<fieldset class="decide"><legend class="section-label">Decision</legend>
           ${choices
             .map(([v, l, s]) => `<label class="radio"><input type="radio" name="decision" value="${v}" ${f.status === v ? "checked" : ""} ${done ? "disabled" : ""}/><span>${l}<small>${s}</small></span></label>`).join("")}
@@ -419,7 +417,7 @@
       if (!decision || !cause) return (decision ? document.getElementById("root-cause") : document.querySelector('input[name="decision"]')).focus();
       f.status = decision; f.rootCause = cause; f.comment = document.getElementById("comment").value; save();
       location.hash = "#/flags";
-      toast({ Confirmed: f.type === "delivery" ? `${f.id} confirmed as a double delivery.` : `${f.id} confirmed as a duplicate. The records are linked.`, "Not a duplicate": `${f.id} marked not a duplicate. It won’t be raised again.`, "Needs verification": `${f.id} sent to the field team to verify.`, Reviewed: `${f.id} marked as reviewed.` }[decision]);
+      toast({ Confirmed: f.type === "delivery" ? `${f.id} confirmed as a double delivery.` : `${f.id} confirmed as a duplicate. The records are linked.`, "Not a duplicate": `${f.id} marked not a duplicate. It won’t be raised again.` }[decision]);
     }
   });
   document.addEventListener("input", e => {
