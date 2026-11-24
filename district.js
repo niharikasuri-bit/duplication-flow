@@ -12,13 +12,31 @@
  */
 (() => {
   "use strict";
-  const STORE_KEY = "duplication-district-v1";
+  const STORE_KEY = "duplication-district-v2";
   const ROOT_CAUSES = ["Sync failed", "Spelling", "Info mismatch", "Area overlap", "Other"];
   const TIER_RANK = { Definite: 3, Strong: 2, Low: 1 };
-  const ISSUE = { household: "Possible duplicate household", individual: "Possible duplicate person" };
+  const ISSUE = { delivery: "Possible double vaccination", household: "Possible duplicate household", individual: "Possible duplicate person" };
+  const DELIVERY_CAUSES = ["Sync failed", "Area overlap", "Other"];
 
   // ---------- Demo flags (same as the desktop supervisor) ----------
   const SEED_FLAGS = () => [
+    {
+      id: "FLG-1042", type: "delivery", tier: "Definite", status: "Open", area: "Solimbo", team: "Team 2", collector: "J. Koroma", raised: "Today, 10:05", source: "Server: two deliveries on one record",
+      title: "Aissatou Sow", household: "Ousmane Sow", age: "3 years 5 months", gender: "Female", round: 2,
+      deliveries: [
+        { time: "Yesterday, 15:05", coords: "8.48311, -13.23102", worker: "M. Kargbo (Team 1)", sync: "Succeeded, yesterday 08:02" },
+        { time: "Today, 10:02", coords: "8.48309, -13.23098", worker: "J. Koroma (Team 2)", sync: "Failed. Last succeeded yesterday 07:40", failed: true }
+      ]
+    },
+    {
+      id: "FLG-1040", type: "delivery", tier: "Strong", status: "Open", area: "Kanu", team: "Team 3", collector: "F. Bangura", raised: "Today, 09:12", source: "Server: deliveries on two matched records",
+      title: "Hawa Bah and Awa Bah", household: "Muhammad Bah", age: "2 years 6 months", gender: "Female", round: 2,
+      note: "Two records the server matched as a Strong pair each received a vaccination this round.",
+      deliveries: [
+        { time: "Today, 08:40", coords: "8.49120, -13.22410", worker: "F. Bangura (Team 3)", sync: "Succeeded, today 07:55", person: "Hawa Bah" },
+        { time: "Today, 09:05", coords: "8.49118, -13.22414", worker: "S. Turay (Team 3)", sync: "Succeeded, today 08:10", person: "Awa Bah" }
+      ]
+    },
     {
       id: "FLG-1033", type: "individual", tier: "Definite", status: "Open", area: "Lunsar", team: "Team 2", collector: "J. Koroma", raised: "Yesterday, 08:55", source: "Server match. The device had no match to show", syncFailed: true,
       title: "Alusine Koroma and Alusine Koroma", household: "Santigie Koroma",
@@ -95,7 +113,7 @@
   const $phone = document.getElementById("phone");
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const flag = () => store.flags.find(f => f.id === state.flagId);
-  const pending = () => store.flags.filter(f => f.status === "Open").sort((a, b) => TIER_RANK[b.tier] - TIER_RANK[a.tier]);
+  const pending = () => store.flags.filter(f => f.status === "Open").sort((a, b) => ((b.type === "delivery") - (a.type === "delivery")) || TIER_RANK[b.tier] - TIER_RANK[a.tier]);
   const reviewed = () => store.flags.filter(f => f.status !== "Open");
 
   const ICON = {
@@ -121,7 +139,7 @@
       bar: "home",
       body: `<div class="card progress-card">
           <p class="progress-title">${n} flag${n === 1 ? "" : "s"} to review</p>
-          <p class="progress-text">Possible duplicate households and people found after records sync in your district.</p>
+          <p class="progress-text">Possible double vaccinations and duplicate households and people found after records sync in your district.</p>
         </div>
         <ul class="home-tiles">
           <li><button class="home-tile" data-action="open-queue" data-tab="Pending">${ICON.flag.replace("<svg", '<svg class="tile-icon"')}<span>Review Flags</span></button></li>
@@ -135,11 +153,11 @@
     const q = state.q.trim().toLowerCase();
     const rows = list.filter(f => !q || f.id.toLowerCase().includes(q) || f.title.toLowerCase().includes(q) || f.area.toLowerCase().includes(q));
     if (!rows.length) return `<div class="dq-empty">${ICON.flag}<p>${state.tab === "Pending" ? "No flags waiting for review." : "No reviewed flags yet."}</p></div>`;
-    return `<ul class="dq-list">${rows.map(f => `<li><article class="dq-card ${f.status === "Confirmed" ? "acc-ok" : f.status === "Not a duplicate" ? "acc-none" : ""}" aria-labelledby="t-${f.id}">
+    return `<ul class="dq-list">${rows.map(f => `<li><article class="dq-card ${f.status === "Confirmed" ? "acc-ok" : f.status === "Not a duplicate" ? "acc-none" : f.type === "delivery" ? "acc-alert" : ""}" aria-labelledby="t-${f.id}">
         <p class="dq-time">${ICON.clock}${esc(f.raised)} · ${esc(f.area)}</p>
         <div class="dq-head"><h3 class="dq-id" id="t-${f.id}">${esc(f.id)}</h3>${f.status === "Open" ? tierPill(f.tier) : statusPill(f.status)}</div>
         <div class="dq-info"><span class="dq-label">${esc(ISSUE[f.type])}</span><span class="dq-value">${esc(f.title)}</span></div>
-        <p class="dq-meta">${esc(f.collector)} · ${esc(f.team)}${f.syncFailed ? ` · <span class="dq-warn">Created after a failed sync</span>` : ""}</p>
+        <p class="dq-meta">${esc(f.collector)} · ${esc(f.team)}${f.type === "delivery" && f.deliveries.some(d => d.failed) ? ` · <span class="dq-warn">Vaccinated after a failed sync</span>` : ""}${f.syncFailed ? ` · <span class="dq-warn">Created after a failed sync</span>` : ""}</p>
         <button class="btn btn-primary dq-btn" data-action="open-flag" data-id="${esc(f.id)}">${f.status === "Open" ? "Review" : "View"}</button>
       </article></li>`).join("")}</ul>`;
   }
@@ -175,7 +193,33 @@
         </div>`;
     }).join("");
   }
+  function reviewDelivery(f) {
+    const done = f.status !== "Open", [d1, d2] = f.deliveries;
+    const rows = [["Child", d1.person || f.title, d2.person || f.title, "similar"], ["Time", d1.time, d2.time, false], ["Household coordinates", d1.coords, d2.coords, false], ["Worker", d1.worker, d2.worker, false], ["Device sync", d1.sync, d2.sync, false]];
+    return {
+      title: "Review Double Vaccination",
+      desc: "The same child may have been vaccinated twice this round. Check both vaccinations, then decide.",
+      body: `<div class="card dq-summary">
+          <dl class="dq-fields">
+            <div><dt>Flag ID</dt><dd>${esc(f.id)}</dd></div>
+            <div><dt>Match</dt><dd>${tierPill(f.tier)}</dd></div>
+            <div><dt>Child</dt><dd>${esc(f.title)}</dd></div>
+            <div><dt>Age</dt><dd>${esc(f.age)}</dd></div>
+            <div><dt>Household</dt><dd>${esc(f.household)}</dd></div>
+            <div><dt>Round</dt><dd>${esc(f.round)}</dd></div>
+          </dl>
+          ${f.deliveries.some(d => d.failed) ? `<p class="dq-sync">One vaccination was recorded after a failed sync.</p>` : ""}
+        </div>
+        ${f.note ? `<div class="dq-info dq-reason"><span class="dq-label">Why this was flagged</span><span class="dq-value">${esc(f.note)}</span></div>` : ""}
+        <h2 class="dq-section">Vaccinations</h2>
+        <div class="card dq-compare"><p class="dq-ab"><span>A · Vaccination 1</span><span>B · Vaccination 2</span></p>${compareRows(rows)}</div>
+        ${done ? `<div class="card dq-done">${statusPill(f.status)}<p>Root cause: ${esc(f.rootCause || "–")}</p>${f.comment ? `<p>${esc(f.comment)}</p>` : ""}</div>` : ""}`,
+      footer: done ? "" : `<button class="btn btn-primary" data-action="decide" data-d="Confirmed">Confirm Double Vaccination</button>
+        <button class="btn btn-secondary" data-action="decide" data-d="Not a duplicate">Not a Duplicate</button>`
+    };
+  }
   function review() {
+    if (flag().type === "delivery") return reviewDelivery(flag());
     const f = flag(), isHH = f.type === "household", done = f.status !== "Open";
     const rows = isHH
       ? [["Household head", f.a.head, f.b.head, "similar"], ["Number of members", f.a.members, f.b.members], ["Household coordinates", f.a.coords, f.b.coords, false], ["Created by", f.a.by, f.b.by, false], ["Created", f.a.at, f.b.at, false], ["Sync at creation", f.a.sync, f.b.sync, false]]
@@ -215,15 +259,15 @@
   }
 
   function decide() {
-    const f = flag(), conf = state.decision === "Confirmed";
+    const f = flag(), conf = state.decision === "Confirmed", del = f.type === "delivery";
     return {
-      title: conf ? "Confirm Duplicate" : "Not a Duplicate",
-      desc: conf ? "Both records are kept, marked as the same and linked." : "This pair won’t be flagged again unless a record changes.",
+      title: conf ? (del ? "Confirm Double Vaccination" : "Confirm Duplicate") : "Not a Duplicate",
+      desc: conf ? (del ? "The child is recorded as vaccinated twice this round." : "Both records are kept, marked as the same and linked.") : (del ? "The earlier vaccination stands." : "This pair won’t be flagged again unless a record changes."),
       body: `<p class="dq-ctx ${conf ? "ctx-ok" : ""}">${esc(f.id)} · ${esc(f.title)}</p>
         <div class="card">
           <fieldset class="radios" id="cause-group" aria-describedby="cause-err">
             <legend class="field-label">Root cause<span class="req">*</span></legend>
-            ${ROOT_CAUSES.map(c => `<label class="radio"><input type="radio" name="cause" value="${esc(c)}" ${state.cause === c ? "checked" : ""}/>${esc(c)}</label>`).join("")}
+            ${(f.type === "delivery" ? DELIVERY_CAUSES : ROOT_CAUSES).map(c => `<label class="radio"><input type="radio" name="cause" value="${esc(c)}" ${state.cause === c ? "checked" : ""}/>${esc(c)}</label>`).join("")}
           </fieldset>
           <p class="field-error" id="cause-err" hidden>Select a root cause</p>
           <div class="field dq-comment">
@@ -241,7 +285,7 @@
       title: "",
       body: `<div class="card panel-card">
           <div class="success-panel">${ICON.check}<h1 class="success-title" id="page-title" tabindex="-1">Decision Saved</h1></div>
-          <p class="success-desc">${esc(f.id)} is marked ${f.status === "Confirmed" ? "as a confirmed duplicate. The records are linked" : "as not a duplicate"}. Workers see the change after their next sync.</p>
+          <p class="success-desc">${esc(f.id)} is marked ${f.status === "Confirmed" ? (f.type === "delivery" ? "as a double vaccination" : "as a confirmed duplicate. The records are linked") : "as not a duplicate"}. Workers see the change after their next sync.</p>
           <div class="panel-actions">
             ${next ? `<button class="btn btn-primary" data-action="open-flag" data-id="${esc(next.id)}" data-fresh="1">Review Next Flag</button>` : ""}
             <button class="btn btn-secondary" data-action="go-home">Go to Home</button>

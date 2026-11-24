@@ -17,9 +17,10 @@
 /* List cards */
 .dq-list { list-style: none; margin-top: 16px; display: flex; flex-direction: column; gap: 16px; }
 .dq-card { position: relative; overflow: hidden; background: var(--paper); border: 1px solid #E5E5E5; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.10); padding: 0 16px 16px; display: flex; flex-direction: column; gap: 12px; }
-.dq-card.acc-ok::before, .dq-card.acc-none::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; }
+.dq-card.acc-ok::before, .dq-card.acc-none::before, .dq-card.acc-alert::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; }
 .dq-card.acc-ok::before { background: var(--success); }
 .dq-card.acc-none::before { background: #B1B4B6; }
+.dq-card.acc-alert::before { background: var(--error); }
 .dq-time { margin: 0 -16px; padding: 8px 16px; background: var(--paper-2); display: flex; align-items: center; gap: 6px; font-size: 13px; line-height: 18px; color: #787878; }
 .dq-time svg { width: 16px; height: 16px; }
 .dq-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }

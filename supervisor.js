@@ -9,13 +9,30 @@
 (function () {
   "use strict";
 
-  const STORE_KEY = "duplication-supervisor-v6";
+  const STORE_KEY = "duplication-supervisor-v7";
   const TIER_RANK = { Definite: 3, Strong: 2, Low: 1 };
   const ROOT_CAUSES = ["Sync failed", "Spelling", "Info mismatch", "Area overlap", "Other"];
   const DELIVERY_CAUSES = ["Sync failed", "Area overlap", "Other"];
 
   // ---------- Demo flags ----------
   const SEED_FLAGS = () => [
+    {
+      id: "FLG-1042", type: "delivery", tier: "Definite", status: "Open", area: "Solimbo", team: "Team 2", collector: "J. Koroma", raised: "Today, 10:05", source: "Server: two deliveries on one record",
+      title: "Aissatou Sow", household: "Ousmane Sow", age: "3 years 5 months", gender: "Female", round: 2,
+      deliveries: [
+        { time: "Yesterday, 15:05", coords: "8.48311, -13.23102", worker: "M. Kargbo (Team 1)", sync: "Succeeded, yesterday 08:02" },
+        { time: "Today, 10:02", coords: "8.48309, -13.23098", worker: "J. Koroma (Team 2)", sync: "Failed. Last succeeded yesterday 07:40", failed: true }
+      ]
+    },
+    {
+      id: "FLG-1040", type: "delivery", tier: "Strong", status: "Open", area: "Kanu", team: "Team 3", collector: "F. Bangura", raised: "Today, 09:12", source: "Server: deliveries on two matched records",
+      title: "Hawa Bah and Awa Bah", household: "Muhammad Bah", age: "2 years 6 months", gender: "Female", round: 2,
+      note: "Two records the server matched as a Strong pair each received a vaccination this round.",
+      deliveries: [
+        { time: "Today, 08:40", coords: "8.49120, -13.22410", worker: "F. Bangura (Team 3)", sync: "Succeeded, today 07:55", person: "Hawa Bah" },
+        { time: "Today, 09:05", coords: "8.49118, -13.22414", worker: "S. Turay (Team 3)", sync: "Succeeded, today 08:10", person: "Awa Bah" }
+      ]
+    },
     {
       id: "FLG-1033", type: "individual", tier: "Definite", status: "Open", area: "Lunsar", team: "Team 2", collector: "J. Koroma", raised: "Yesterday, 08:55", source: "Server match. The device had no match to show", syncFailed: true,
       title: "Alusine Koroma and Alusine Koroma", household: "Santigie Koroma",
@@ -164,9 +181,10 @@
     const all = store.flags, open = all.filter(f => f.status === "Open");
     const n = filteredFlags().length;
     return `${crumbs([["Home", "index.html"], ["Flag Queue"]])}
-      ${head("Flag Queue", "Possible duplicate households and people found after records sync are here, strongest match first. Open a flag to compare the records and decide.")}
+      ${head("Flag Queue", "Possible double vaccinations and duplicate households and people found after records sync are here. Double vaccinations come first, then the strongest match. Open a flag to compare the records and decide.")}
       ${stats([
         [open.length, "Flags to review"],
+        [open.filter(f => f.type === "delivery").length, "Possible double vaccinations", true],
         [open.filter(f => f.type === "household").length, "Possible duplicate households"],
         [open.filter(f => f.type === "individual").length, "Possible duplicate people"]
       ])}
