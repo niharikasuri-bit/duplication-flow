@@ -121,10 +121,10 @@ table.data tr.is-alert td:first-child { box-shadow: inset 3px 0 0 var(--error); 
 .rec-rows dt { color: var(--text-2); }
 .rec-rows dd { color: var(--text); word-break: break-word; }
 .rec-rows > div[class^="m-"] { border-radius: 4px; box-shadow: inset 3px 0 0 var(--m-c); background: var(--m-bg); }
-.rec-rows > div[class^="m-"] dd { font-weight: 700; }
-.m-same { --m-c: var(--success); --m-bg: var(--success-bg); }
-.m-similar { --m-c: #C58A00; --m-bg: var(--warning-bg); }
-.m-diff { --m-c: var(--error); --m-bg: var(--error-bg); }
+.rec-rows > div[class^="m-"] dd { font-weight: 500; }
+.m-same { --m-c: var(--success); --m-bg: #F6FCF8; }
+.m-similar { --m-c: #B57F00; --m-bg: #FFFAEB; }
+.m-diff { --m-c: var(--error); --m-bg: #FFF8F7; }
 .m-legend { list-style: none; margin-top: 12px; display: flex; gap: 16px; font-size: 12px; line-height: 16px; color: var(--text); }
 .m-legend li { display: inline-flex; align-items: center; gap: 6px; }
 .m-legend li::before { content: ""; width: 12px; height: 12px; border-radius: 2px; background: var(--m-bg); box-shadow: inset 3px 0 0 var(--m-c); border: 1px solid var(--m-c); }
@@ -257,4 +257,8 @@ table.data tr.is-alert td:first-child { box-shadow: inset 3px 0 0 var(--error); 
 @media (max-width: 1100px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 900px) { .dash-grid { grid-template-columns: 1fr; } }
 
-.sync-note { margin-top: 16px; padding: 10px 12px; border-radius: 4px; background: #FFF4D6; border-left: 3px solid #B57F00; font-size: 14px; line-height: 19px; color: var(--text); }
+
+/* Sync failed notice: same component in desktop and mobile review */
+.sync-notice { margin-top: 16px; display: flex; gap: 10px; padding: 12px; border-radius: 4px; background: #FFF4D6; border-left: 4px solid #B57F00; color: var(--text); font-size: 14px; line-height: 19px; }
+.sync-notice > svg { flex: 0 0 20px; width: 20px; height: 20px; color: #B57F00; }
+.sync-notice-title { font-weight: 700; color: #6B4A00; margin-bottom: 2px; }

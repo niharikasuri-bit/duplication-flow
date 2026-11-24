@@ -201,6 +201,14 @@
         <tbody>${rows.map(([l, a, b, k]) => { const m = kind(a, b, k); return `<tr class="${m ? `mt-${m}` : ""}"><th scope="row">${esc(l)}</th><td>${esc(a)}</td><td>${esc(b)}${m ? `<span class="sr-only"> (${KIND_LABEL[m].toLowerCase()})</span>` : ""}</td></tr>`; }).join("")}</tbody>
       </table>`;
   }
+  // One sync notice, same component and wording in the desktop and mobile review.
+  const lastSync = s => { const m = /Last succeeded (.+)$/.exec(String(s || "")); return m ? m[1] : ""; };
+  function syncNotice(f) {
+    const items = f.type === "delivery"
+      ? f.deliveries.map((d, i) => d.failed ? `The vaccination in record ${i + 1} was saved while the phone could not sync${lastSync(d.sync) ? ` (last synced ${lastSync(d.sync)})` : ""}, so the worker could not see the other vaccination.` : "").filter(Boolean)
+      : f.syncFailed ? [`Record 2 was saved while the phone could not sync${lastSync(f.b.sync) ? ` (last synced ${lastSync(f.b.sync)})` : ""}, so the worker could not see record 1.`] : [];
+    return items.map(t => `<div class="sync-notice" role="note"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg><div><p class="sync-notice-title">Sync failed</p><p>${esc(t)}</p></div></div>`).join("");
+  }
   // Header: label on the left, value on the right.
   const flagHead = f => `<div class="card dq-flaghead">
       <dl class="dq-kv">
@@ -209,8 +217,8 @@
         <div><dt>Match</dt><dd>${tierPill(f.tier)}</dd></div>
         ${f.reason ? `<div><dt>Worker’s reason</dt><dd>${esc(f.reason)}</dd></div>` : ""}
       </dl>
-      ${f.syncFailed || (f.deliveries || []).some(d => d.failed) ? `<p class="dq-sync">${f.type === "delivery" ? "One vaccination was recorded after a failed sync." : "Record 2 was created after a failed sync."}</p>` : ""}
     </div>
+    ${syncNotice(f)}
     <ul class="dq-legend" aria-label="Highlight key"><li class="k-same">Same</li><li class="k-similar">Similar</li><li class="k-diff">Different</li></ul>`;
   const doneCard = f => f.status !== "Open" ? `<div class="card dq-done">${statusPill(f.status)}<p>Root cause: ${esc(f.rootCause || "–")}</p>${f.comment ? `<p>${esc(f.comment)}</p>` : ""}</div>` : "";
 

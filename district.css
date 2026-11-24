@@ -55,10 +55,10 @@
 .dq-section { margin-top: 24px; font-size: 18px; line-height: 22px; font-weight: 700; color: var(--primary-2); }
 .dq-legend { list-style: none; margin-top: 8px; display: flex; gap: 14px; font-size: 12px; line-height: 16px; color: var(--text); }
 .dq-legend li { display: inline-flex; align-items: center; gap: 6px; }
-.dq-legend li::before { content: ""; width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--k-c); background: var(--k-bg); }
-.k-same { --k-c: var(--success); --k-bg: #F1FFF8; }
-.k-similar { --k-c: #B57F00; --k-bg: #FFF4D6; }
-.k-diff { --k-c: var(--error); --k-bg: #FFF5F4; }
+.dq-legend li::before { content: ""; width: 12px; height: 12px; border-radius: 2px; background: var(--k-bg); box-shadow: inset 3px 0 0 var(--k-c); border: 1px solid var(--k-c); }
+.k-same { --k-c: var(--success); --k-bg: #F6FCF8; }
+.k-similar { --k-c: #B57F00; --k-bg: #FFFAEB; }
+.k-diff { --k-c: var(--error); --k-bg: #FFF8F7; }
 .dq-compare { margin-top: 8px; }
 .dq-ab { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; line-height: 16px; font-weight: 700; color: var(--primary-2); }
 .cmp-row { padding: 10px 0; border-bottom: 1px solid #ECECEC; }
@@ -120,3 +120,8 @@
 .dq-table tr.mt-same { --k-c: var(--success); --k-bg: #F6FCF8; }
 .dq-table tr.mt-similar { --k-c: #B57F00; --k-bg: #FFFAEB; }
 .dq-table tr.mt-diff { --k-c: var(--error); --k-bg: #FFF8F7; }
+
+/* Sync failed notice: same component in desktop and mobile review */
+.sync-notice { margin-top: 16px; display: flex; gap: 10px; padding: 12px; border-radius: 4px; background: #FFF4D6; border-left: 4px solid #B57F00; color: var(--text); font-size: 14px; line-height: 19px; }
+.sync-notice > svg { flex: 0 0 20px; width: 20px; height: 20px; color: #B57F00; }
+.sync-notice-title { font-weight: 700; color: #6B4A00; margin-bottom: 2px; }

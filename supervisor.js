@@ -232,6 +232,15 @@
     </svg>`;
   }
 
+  // One sync notice, same component and wording in the desktop and mobile review.
+  const lastSync = s => { const m = /Last succeeded (.+)$/.exec(String(s || "")); return m ? m[1] : ""; };
+  function syncNotice(f) {
+    const items = f.type === "delivery"
+      ? f.deliveries.map((d, i) => d.failed ? `The vaccination in record ${i + 1} was saved while the phone could not sync${lastSync(d.sync) ? ` (last synced ${lastSync(d.sync)})` : ""}, so the worker could not see the other vaccination.` : "").filter(Boolean)
+      : f.syncFailed ? [`Record 2 was saved while the phone could not sync${lastSync(f.b.sync) ? ` (last synced ${lastSync(f.b.sync)})` : ""}, so the worker could not see record 1.`] : [];
+    return items.map(t => `<div class="sync-notice" role="note"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg><div><p class="sync-notice-title">Sync failed</p><p>${esc(t)}</p></div></div>`).join("");
+  }
+
   // ---------- S2 Side by side review ----------
   // Two record containers side by side inside the main container (DIGIT secondary containers).
   // Each compared field is highlighted in both records: same (green), similar (amber) or different (red).
@@ -325,7 +334,7 @@
             <h2 class="card-title">${isHH ? "Households" : "Individuals"}</h2>
             <p class="card-sub">${isHH ? "" : `Household: ${esc(f.household)} · `}Signals matched: ${f.signals.map(esc).join(", ")}</p>
             ${recordPanels(rows, f.a, f.b)}
-            ${f.syncFailed ? `<p class="sync-note">Sync: record 2 was created after a failed sync. ${esc(f.b.sync)}.</p>` : ""}
+            ${syncNotice(f)}
             ${f.reason ? `<div class="rec-notes">
               <div><h3>Worker’s reason</h3><p>The worker ${isHH ? "created record 2 as a new household" : "added record 2 as a new person"}: “${esc(f.reason)}”.</p></div>
             </div>` : ""}
@@ -383,7 +392,7 @@
                   <div><dt>Worker</dt><dd>${esc(d.worker)}</dd></div>
                 </dl>
               </section>`).join("")}</div>
-            ${f.deliveries.filter(d => d.failed).map(d => `<p class="sync-note">Sync: record ${f.deliveries.indexOf(d) + 1} was recorded after a failed sync. ${esc(d.sync)}.</p>`).join("")}
+            ${syncNotice(f)}
           </div>
         </div>
         <div class="review-side">${decisionCard(f, "delivery")}</div>
