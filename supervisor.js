@@ -184,7 +184,7 @@
         <td><span class="cell-strong">${esc(f.id)}</span><span class="cell-sub">${esc(f.raised)}</span></td>
         <td>${typeTag(f.type)}</td>
         <td>${tierTag(f.tier)}</td>
-        <td>${esc(f.title)}<span class="cell-sub">${esc(f.source)}${f.reason ? ` · “${esc(f.reason)}”` : ""}</span>${f.syncFailed ? `<span class="cell-sub">Created after a failed sync</span>` : ""}${dsResponse(f.id) ? `<span class="cell-sub ds-sub">District supervisor: ${esc(DS_LABEL(f, dsResponse(f.id).decision))}</span>` : ""}</td>
+        <td>${esc(f.title)}${dsResponse(f.id) ? `<span class="cause-tag">${esc(dsResponse(f.id).reason)}</span>` : ""}</td>
         <td>${esc(f.area)}</td>
         <td>${esc(f.team)}</td>
         <td>${esc(f.collector)}</td>
@@ -281,11 +281,10 @@
         <dl class="flag-kv">
           <div><dt>Flag ID</dt><dd>${esc(f.id)}</dd></div>
           <div><dt>Reason</dt><dd>${esc(ISSUE[f.type])}</dd></div>
-          ${possibleCause(f)}
+          ${dsResponse(f.id) ? `<div><dt>Possible cause</dt><dd><span class="cause-tag">${esc(dsResponse(f.id).reason)}</span></dd></div>` : ""}
           <div><dt>Match</dt><dd>${tierTag(f.tier)}</dd></div>
           <div><dt>Area</dt><dd>${esc(f.area)}</dd></div>
           <div><dt>Team</dt><dd>${esc(f.team)}</dd></div>
-          ${f.reason ? `<div><dt>Worker’s reason</dt><dd>${esc(f.reason)}</dd></div>` : ""}
         </dl>
       </div>`;
   }

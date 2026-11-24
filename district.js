@@ -164,7 +164,6 @@
         </div>
         <ul class="home-tiles">
           <li><button class="home-tile" data-action="open-queue" data-tab="Pending">${ICON.flag.replace("<svg", '<svg class="tile-icon"')}<span>Review Flags</span></button></li>
-          <li><button class="home-tile" data-action="open-queue" data-tab="Reviewed">${ICON.done.replace("<svg", '<svg class="tile-icon"')}<span>Reviewed Flags</span></button></li>
         </ul>
         <p class="powered">Powered by DIGIT</p>`
     };

@@ -307,3 +307,7 @@ table.data tr.is-alert td:first-child { box-shadow: inset 3px 0 0 var(--error); 
 .ds-card .flag-kv { margin-top: 12px; }
 .ds-comment { margin-top: 12px; font-size: 14px; line-height: 19px; color: var(--text); }
 .ds-sub { color: var(--primary-2) !important; font-weight: 500; }
+
+/* Neutral cause tag */
+.cause-tag { display: inline-block; margin-top: 4px; padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border); background: #F2F2F2; color: #505A5F; font-size: 12px; line-height: 16px; font-weight: 500; }
+td .cause-tag { display: block; width: fit-content; margin-top: 6px; }
