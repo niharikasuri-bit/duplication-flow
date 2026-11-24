@@ -110,6 +110,8 @@ table.data tr.is-alert td:first-child { box-shadow: inset 3px 0 0 var(--error); 
 .tag-neutral { color: var(--text); background: var(--paper-2); border-color: var(--border); }
 
 /* ---------- Review (S2 / S3) ---------- */
+.review-side { position: sticky; top: 76px; }
+.review-side > .card { margin-top: 16px; }
 .review-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr); gap: 16px; align-items: start; }
 .signals { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
 .cmp { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 19px; margin-top: 12px; }

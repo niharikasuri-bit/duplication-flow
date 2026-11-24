@@ -279,14 +279,14 @@
             ${f.reason ? `<p class="section-label">Worker’s reason</p><p class="card-sub" style="color:var(--text)">The worker added record B as a new person: “${esc(f.reason)}”.</p>` : ""}
             ${f.searchTerm ? `<p class="section-label">Search before create</p><p class="card-sub" style="color:var(--text)">The worker searched “${esc(f.searchTerm)}” before creating household B.</p>` : ""}
           </div>
+          ${isHH ? `<div class="card card-pad"><h2 class="card-title">Location</h2><p class="card-sub">Household coordinates of A and B.</p>${mapSvg(f.distance, [f.a.head, f.b.head])}</div>` : ""}
           ${isHH ? `<div class="card card-pad">
             <h2 class="card-title">People in both households</h2>
             <table class="cmp"><thead><tr><th scope="col">Household A</th><th scope="col">Household B</th><th scope="col">Match</th></tr></thead>
               <tbody>${f.pairs.map(p => `<tr><td>${esc(p.a)}</td><td>${esc(p.b)}</td><td>${p.match ? tierTag(p.match) : "–"}</td></tr>`).join("")}</tbody></table>
           </div>` : ""}
         </div>
-        <div>
-          ${isHH ? `<div class="card card-pad"><h2 class="card-title">Location</h2><p class="card-sub">Household coordinates of A and B.</p>${mapSvg(f.distance, [f.a.head, f.b.head])}</div>` : ""}
+        <div class="review-side">
           ${decisionCard(f, "review")}
         </div>
       </div>`;
@@ -310,7 +310,7 @@
             </table>
           </div>
         </div>
-        <div>${decisionCard(f, "delivery")}</div>
+        <div class="review-side">${decisionCard(f, "delivery")}</div>
       </div>`;
   }
 
