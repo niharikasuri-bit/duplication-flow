@@ -106,3 +106,17 @@
 .dq-table { margin-top: 16px; background: var(--paper); }
 .dq-person { margin-top: 16px; }
 .dq-person .dq-table { margin-top: 8px; }
+
+/* Header as label | value rows */
+.dq-kv > div { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid #ECECEC; }
+.dq-kv > div:first-child { padding-top: 0; }
+.dq-kv > div:last-child { border-bottom: 0; padding-bottom: 0; }
+.dq-kv dt { font-size: 14px; line-height: 19px; color: #505A5F; }
+.dq-kv dd { font-size: 14px; line-height: 19px; font-weight: 700; color: var(--primary-2); text-align: right; }
+.dq-flaghead + .dq-legend { margin-top: 16px; }
+.dq-legend + .dq-table { margin-top: 8px; }
+/* Subtle match marking in the table, same colours as the desktop legend */
+.dq-table tr[class^="mt-"] td:last-child { box-shadow: inset 3px 0 0 var(--k-c); background: var(--k-bg); }
+.dq-table tr.mt-same { --k-c: var(--success); --k-bg: #F6FCF8; }
+.dq-table tr.mt-similar { --k-c: #B57F00; --k-bg: #FFFAEB; }
+.dq-table tr.mt-diff { --k-c: var(--error); --k-bg: #FFF8F7; }

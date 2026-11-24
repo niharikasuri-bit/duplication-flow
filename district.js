@@ -198,16 +198,20 @@
     return `<table class="pm-table dq-table">
         <caption class="sr-only">${esc(caption)}</caption>
         <thead><tr><th scope="col"><span class="sr-only">Field</span></th><th scope="col">${ha}</th><th scope="col">${hb}</th></tr></thead>
-        <tbody>${rows.map(([l, a, b, k]) => { const d = kind(a, b, k) && kind(a, b, k) !== "same"; return `<tr class="${d ? "is-diff" : ""}"><th scope="row">${esc(l)}</th><td>${esc(a)}</td><td>${esc(b)}${d ? '<span class="sr-only"> (different)</span>' : ""}</td></tr>`; }).join("")}</tbody>
+        <tbody>${rows.map(([l, a, b, k]) => { const m = kind(a, b, k); return `<tr class="${m ? `mt-${m}` : ""}"><th scope="row">${esc(l)}</th><td>${esc(a)}</td><td>${esc(b)}${m ? `<span class="sr-only"> (${KIND_LABEL[m].toLowerCase()})</span>` : ""}</td></tr>`; }).join("")}</tbody>
       </table>`;
   }
-  // Header: flag ID left, match tier right, reason below.
+  // Header: label on the left, value on the right.
   const flagHead = f => `<div class="card dq-flaghead">
-      <div class="dq-head"><span class="dq-id">${esc(f.id)}</span>${tierPill(f.tier)}</div>
-      <p class="dq-issue">${esc(ISSUE[f.type])}</p>
+      <dl class="dq-kv">
+        <div><dt>Flag ID</dt><dd>${esc(f.id)}</dd></div>
+        <div><dt>Reason</dt><dd>${esc(ISSUE[f.type])}</dd></div>
+        <div><dt>Match</dt><dd>${tierPill(f.tier)}</dd></div>
+        ${f.reason ? `<div><dt>Worker’s reason</dt><dd>${esc(f.reason)}</dd></div>` : ""}
+      </dl>
       ${f.syncFailed || (f.deliveries || []).some(d => d.failed) ? `<p class="dq-sync">${f.type === "delivery" ? "One vaccination was recorded after a failed sync." : "Record B was created after a failed sync."}</p>` : ""}
-      ${f.reason ? `<p class="dq-wreason">Worker’s reason: ${esc(f.reason)}</p>` : ""}
-    </div>`;
+    </div>
+    <ul class="dq-legend" aria-label="Highlight key"><li class="k-same">Same</li><li class="k-similar">Similar</li><li class="k-diff">Different</li></ul>`;
   const doneCard = f => f.status !== "Open" ? `<div class="card dq-done">${statusPill(f.status)}<p>Root cause: ${esc(f.rootCause || "–")}</p>${f.comment ? `<p>${esc(f.comment)}</p>` : ""}</div>` : "";
 
   function reviewDelivery(f) {
