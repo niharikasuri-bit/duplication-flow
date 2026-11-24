@@ -775,6 +775,32 @@
 
   // ---------- Dialogs ----------
   let nearby = [];
+  // Same table as Possible Match Found: the existing household next to the one being created.
+  function nearbyTableHtml(n) {
+    const h = n.h, p = state.person, d = state.draftHH || {};
+    const head = h.members.find(m => m.head) || { name: h.head };
+    const newAge = personMonths(p);
+    const pct = Math.min(99, Math.round(n.s * 85 + (1 - h.m / NEARBY_M) * 15));
+    const rows = [
+      ["Household Head", head.name, p.name.trim(), nameSim(head.name, p.name) < 0.99],
+      ...(n.matched !== head.name ? [["Similar Name", n.matched, p.name.trim(), true]] : []),
+      ["Head’s Gender", head.gender || "–", p.gender || "–", !!(head.gender && p.gender && head.gender !== p.gender)],
+      ["Head’s Age", head.age != null ? ageLabel(head.age) : "–", ageLabel(newAge), head.age != null && head.age !== newAge],
+      ["Number of Members", String(h.members.length), String(d.size || "–"), String(h.members.length) !== String(d.size)],
+      ["Distance", `${h.m} m away`, "This location", false]
+    ];
+    return `<p class="match-bar">${pct}% Match Found</p>
+        <table class="pm-table">
+          <caption class="sr-only">Existing household compared with this registration</caption>
+          <thead><tr>
+            <th scope="col"><span class="sr-only">Field</span></th>
+            <th scope="col">Existing household<span class="pm-id">ID ${esc(h.id.toUpperCase())}</span></th>
+            <th scope="col">This registration</th>
+          </tr></thead>
+          <tbody>${rows.map(([l, a, b, x]) => `<tr class="${x ? "is-diff" : ""}"><th scope="row">${esc(l)}</th><td>${esc(a)}</td><td>${esc(b)}${x ? '<span class="sr-only"> (different)</span>' : ""}</td></tr>`).join("")}</tbody>
+        </table>
+        ${nearby.length > 1 ? `<button class="btn btn-primary nearby-use" data-action="nearby-open" data-id="${h.id}">Use This Household</button>` : ""}`;
+  }
   function nearbyDialogHtml() {
     if (!nearby.length) return "";
     return `<div class="dialog-backdrop" id="nearby-dialog">
@@ -783,8 +809,9 @@
         ${ICON.alertWarn}
         <h2 class="dialog-title" id="nearby-title">Household May Already Exist</h2>
         <p class="dialog-desc" id="nearby-desc">${nearby.length === 1 ? "A household" : `${nearby.length} households`} within ${NEARBY_M} m ${nearby.length === 1 ? "has" : "have"} someone with a similar name. Is this one of these households?</p>
-        <ul class="hh-list alert-list">${nearby.map(n => householdCard(n.h, { action: "nearby-open", label: "Use This Household", matched: n.matched, matchTag: "Similar name", showDistance: true })).join("")}</ul>
+        ${nearby.map(n => nearbyTableHtml(n)).join("")}
         <div class="dialog-actions">
+          ${nearby.length === 1 ? `<button class="btn btn-primary" data-action="nearby-open" data-id="${nearby[0].h.id}">Use This Household</button>` : ""}
           <button class="btn btn-secondary" data-action="nearby-new">Create New Household</button>
         </div>
       </div>
