@@ -225,6 +225,17 @@
   }
 
   // ---------- S2 Side by side review ----------
+  // Two record containers side by side inside the main container (DIGIT secondary containers).
+  function recordPanels(rows, a, b) {
+    const panel = (side, rec, other) => `<section class="rec" aria-labelledby="rec-${side}">
+        <header class="rec-head"><h3 id="rec-${side}">Record ${side}</h3><span class="rec-id">${esc(rec.id)}</span></header>
+        <dl class="rec-rows">${rows.map(([l, va, vb, check = true]) => {
+          const v = side === "A" ? va : vb, d = side === "B" && check && String(va) !== String(vb);
+          return `<div class="${d ? "is-diff" : ""}"><dt>${esc(l)}</dt><dd>${esc(v)}${d ? '<span class="sr-only"> (different from record A)</span>' : ""}</dd></div>`;
+        }).join("")}</dl>
+      </section>`;
+    return `<div class="rec-pair">${panel("A", a)}${panel("B", b)}</div>`;
+  }
   function cmpTable(rows, aTitle, bTitle) {
     return `<table class="cmp">
       <caption class="sr-only">Record A compared with record B</caption>
@@ -275,9 +286,11 @@
           <div class="card card-pad">
             <h2 class="card-title">${isHH ? "Households" : "Individuals"}</h2>
             <p class="card-sub">${isHH ? "" : `Household: ${esc(f.household)} · `}Signals matched: ${f.signals.map(esc).join(", ")}</p>
-            ${cmpTable(rows, `Record A<span class="cell-sub">${esc(f.a.id)}</span>`, `Record B<span class="cell-sub">${esc(f.b.id)}</span>`)}
-            ${f.reason ? `<p class="section-label">Worker’s reason</p><p class="card-sub" style="color:var(--text)">The worker added record B as a new person: “${esc(f.reason)}”.</p>` : ""}
-            ${f.searchTerm ? `<p class="section-label">Search before create</p><p class="card-sub" style="color:var(--text)">The worker searched “${esc(f.searchTerm)}” before creating household B.</p>` : ""}
+            ${recordPanels(rows, f.a, f.b)}
+            ${f.reason || f.searchTerm ? `<div class="rec-notes">
+              ${f.reason ? `<div><h3>Worker’s reason</h3><p>The worker added record B as a new person: “${esc(f.reason)}”.</p></div>` : ""}
+              ${f.searchTerm ? `<div><h3>Search before create</h3><p>The worker searched “${esc(f.searchTerm)}” before creating household B.</p></div>` : ""}
+            </div>` : ""}
           </div>
           ${isHH ? `<div class="card card-pad"><h2 class="card-title">Location</h2><p class="card-sub">Household coordinates of A and B.</p>${mapSvg(f.distance, [f.a.head, f.b.head])}</div>` : ""}
           ${isHH ? `<div class="card card-pad">
