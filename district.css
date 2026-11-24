@@ -169,3 +169,6 @@
 .kv-rows dd.kv-main { font-size: 16px; line-height: 20px; font-weight: 700; color: var(--primary-2); }
 .kv-rows dd.kv-cause { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: #8A5A00; }
 .kv-rows dd.kv-cause svg { width: 18px; height: 18px; flex: 0 0 18px; }
+
+/* Home tile: icon and label centred in the tile */
+.home-tile { justify-content: center; padding: 12px 6px; }
