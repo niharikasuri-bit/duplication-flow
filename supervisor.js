@@ -192,7 +192,7 @@
       </tr>`).join("");
   }
   function viewFlags() {
-    const all = store.flags, open = sortedFlags(), waiting = store.flags.filter(f => f.status === "Open" && !dsResponse(f.id)).length;
+    const all = store.flags, open = sortedFlags();
     const n = filteredFlags().length;
     return `${crumbs([["Home", "index.html"], ["Flag Queue"]])}
       ${head("Flag Queue", "Flags the district supervisor confirmed come here for your final decision. Double vaccinations come first, then the strongest match. Open a flag to compare the records and decide.")}
@@ -200,8 +200,7 @@
         [open.length, "Flags to review"],
         [open.filter(f => f.type === "delivery").length, "Possible double vaccinations", true],
         [open.filter(f => f.type === "household").length, "Possible duplicate households"],
-        [open.filter(f => f.type === "individual").length, "Possible duplicate people"],
-        [waiting, "Waiting for the district supervisor"]
+        [open.filter(f => f.type === "individual").length, "Possible duplicate people"]
       ])}
       <div class="card">
         <div class="filters">
