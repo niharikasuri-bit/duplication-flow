@@ -393,10 +393,6 @@ body { display: flex; align-items: center; justify-content: center; min-height: 
 .sync-rows .pair dt { font-weight: 400; color: var(--text-2); }
 .sync-rows .pair dd { text-align: right; font-weight: 500; }
 .sync-card .notice { margin-top: 12px; }
-.sync-chips { list-style: none; margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
-.sync-chip { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 8px; border-radius: 4px; background: #E5F4EC; color: var(--success); font-size: 12px; line-height: 16px; font-weight: 500; }
-.sync-chip svg { width: 14px; height: 14px; flex: 0 0 14px; }
-.sync-chip.is-failed { background: #FBE6E3; color: var(--error); }
 .sync-summary { margin-top: 8px; font-size: 12px; line-height: 16px; color: var(--text-2); }
 .sync-row dd { display: flex; flex-direction: column; align-items: flex-end; font-weight: 400 !important; }
 .sync-state { display: inline-flex; align-items: center; gap: 4px; font-weight: 500; color: var(--success); }

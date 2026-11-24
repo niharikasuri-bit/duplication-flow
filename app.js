@@ -422,8 +422,7 @@
 
   function syncCard() {
     const s = store.sync, ok = syncOk();
-    // Compact: one chip per sync type (green tick or red cross), then one summary line.
-    const chip = (l, good) => `<li class="sync-chip ${good ? "" : "is-failed"}">${ICON[good ? "ok" : "stop"]}<span>${esc(l)}</span><span class="sr-only">${good ? "succeeded" : "failed"}</span></li>`;
+    // Compact: status pill + one summary line.
     const summary = [
       ok ? `Synced ${LAST_OK.toLowerCase()}` : `Last succeeded ${LAST_GOOD_BEFORE.toLowerCase()}`,
       `${s.reg ? "1,248" : "1,236"} records`,
@@ -445,11 +444,6 @@
         <h2 class="card-title" id="sync-title">Data on this device</h2>
         <span class="pill pill-${ok ? "ok" : "error"}">${ok ? "Sync succeeded" : "Sync failed"}</span>
       </div>
-      <ul class="sync-chips" aria-label="Sync result per type">
-        ${chip("Registrations", s.reg)}
-        ${chip("Vaccinations", s.status)}
-        ${chip("Flags", s.flags)}
-      </ul>
       <p class="sync-summary">${summary.map(esc).join('<span aria-hidden="true"> · </span>')}</p>
       ${msg}
       ${btn ? `<div class="sync-actions">${btn}</div>` : ""}
