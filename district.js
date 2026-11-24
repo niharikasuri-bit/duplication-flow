@@ -206,7 +206,7 @@
   }
   function reviewDelivery(f) {
     const done = f.status !== "Open", [d1, d2] = f.deliveries;
-    const rows = [["Child", d1.person || f.title, d2.person || f.title, "similar"], ["Time", d1.time, d2.time, false], ["Household coordinates", d1.coords, d2.coords, false], ["Worker", d1.worker, d2.worker, false], ["Device sync", d1.sync, d2.sync, false]];
+    const rows = [["Child", d1.person || f.title, d2.person || f.title, "similar"], ["Time", d1.time, d2.time, false], ["Household coordinates", d1.coords, d2.coords, false], ["Device sync", d1.sync, d2.sync, false]];
     return {
       title: "Review Double Vaccination",
       desc: "The same child may have been vaccinated twice this round. Check both vaccinations, then decide.",
@@ -233,8 +233,8 @@
     if (flag().type === "delivery") return reviewDelivery(flag());
     const f = flag(), isHH = f.type === "household", done = f.status !== "Open";
     const rows = isHH
-      ? [["Household head", f.a.head, f.b.head, "similar"], ["Number of members", f.a.members, f.b.members], ["Household coordinates", f.a.coords, f.b.coords, false], ["Created by", f.a.by, f.b.by, false], ["Created", f.a.at, f.b.at, false], ["Sync at creation", f.a.sync, f.b.sync, false]]
-      : [["Full name", f.a.name, f.b.name, "similar"], ["Gender", f.a.gender, f.b.gender], ["Age", f.a.age, f.b.age, "similar"], ["Date of birth", f.a.dob, f.b.dob, "similar"], ["ID number", f.a.idNo, f.b.idNo], ["Created by", f.a.by, f.b.by, false], ["Created", f.a.at, f.b.at, false]];
+      ? [["Household head", f.a.head, f.b.head, "similar"], ["Number of members", f.a.members, f.b.members], ["Household coordinates", f.a.coords, f.b.coords, false], ["Created", f.a.at, f.b.at, false], ["Sync at creation", f.a.sync, f.b.sync, false]]
+      : [["Full name", f.a.name, f.b.name, "similar"], ["Gender", f.a.gender, f.b.gender], ["Age", f.a.age, f.b.age, "similar"], ["Date of birth", f.a.dob, f.b.dob, "similar"], ["ID number", f.a.idNo, f.b.idNo], ["Created", f.a.at, f.b.at, false]];
     const parse = s => { if (!s || s === "–") return null; const [name, g, age] = s.split(", "); return { name, gender: { F: "Female", M: "Male" }[g] || g, age }; };
     const people = isHH ? (f.pairs || []).map((p, i) => {
       const a = parse(p.a), b = parse(p.b);
@@ -254,7 +254,7 @@
             <div><dt>Issue</dt><dd>${esc(ISSUE[f.type])}</dd></div>
             ${isHH ? `<div><dt>Distance</dt><dd>${ICON.pin}${esc(f.distance)} m apart</dd></div>` : `<div><dt>Household</dt><dd>${esc(f.household)}</dd></div>`}
             <div><dt>Area</dt><dd>${esc(f.area)}</dd></div>
-            <div><dt>Collector</dt><dd>${esc(f.collector)}</dd></div>
+            <div><dt>Team</dt><dd>${esc(f.team)}</dd></div>
           </dl>
           ${f.syncFailed ? `<p class="dq-sync">Record B was created after a failed sync.</p>` : ""}
         </div>
