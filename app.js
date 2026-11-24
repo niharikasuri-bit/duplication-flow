@@ -547,8 +547,7 @@
         // Already served this round: no Take Action. Show who, when and where, with an option to flag.
         const btn = !isChild(p) ? ""
           : p.status === "done"
-            ? `<p class="served-line">Vaccinated ${esc(p.servedAt.toLowerCase())} by ${esc(p.servedBy)} at ${esc(p.servedWhere || "this household")}.</p>
-               ${p.flag ? "" : `<button class="btn btn-secondary card-btn" data-action="flag-served" data-id="${p.id}">Flag for Supervisor</button>`}`
+            ? `${p.flag ? "" : `<button class="btn btn-secondary card-btn" data-action="flag-served" data-id="${p.id}">Flag for Supervisor</button>`}`
           : p.status === "not"
             ? `<button class="btn btn-secondary card-btn" data-action="unable" data-id="${p.id}">Unable to Vaccinate</button>`
             : `<button class="btn btn-primary card-btn" data-action="take-action" data-id="${p.id}">Take Action</button>`;
