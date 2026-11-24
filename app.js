@@ -34,6 +34,7 @@
     individual: { name: "Individual Details", desc: "Add the details of the person you are registering." },
     matches:    { name: "Existing Matches", desc: "Select the record that matches the person you are registering." },
     reason:     { name: "Add as New Person", desc: "Tell us why this is a different person." },
+    flagReason: { name: "Flag Vaccination Record", desc: "Tell your supervisor why this record is wrong." },
     reasonHH:   { name: "Create New Household", desc: "Tell us why this is a different household." },
     checklist:  { name: "Vaccination Checklist", desc: "Confirm the vaccination by completing the checklist." },
     success:    { name: "Vaccination Successful", desc: "Vaccination has been recorded successfully." }
@@ -636,6 +637,24 @@
       };
     },
 
+    // Flag a vaccinated record: reason screen (same pattern as the add-as-new reason screens)
+    flagReason() {
+      const p = member(), err = state.errors["fr-why"];
+      return {
+        tag: ASSIGNED_AREA,
+        body: `${title("Flag Vaccination Record")}
+          <p class="page-desc page-desc-2">${esc(p.name)} is marked as vaccinated this round.</p>
+          <div class="card">
+            <fieldset class="field radios ${err ? "has-error" : ""}" id="fr-why-group" aria-describedby="fr-why-err">
+              <legend>Why is this record wrong?${reqMark(true)}</legend>
+              ${FLAG_SERVED_REASONS.map(o => `<label class="radio"><input type="radio" name="fr-why" value="${esc(o)}" ${o === state.flagWhy ? "checked" : ""}/>${esc(o)}</label>`).join("")}
+              ${errorText("fr-why", err)}
+            </fieldset>
+          </div>`,
+        footer: `<button class="btn btn-primary" data-action="flag-submit">Flag for Supervisor</button>`
+      };
+    },
+
     // W9
     reason() {
       const r = state.reason, err = state.errors["r-why"], hhMode = state.reasonFor === "household";
@@ -863,9 +882,12 @@
       <div class="dialog alert" role="alertdialog" aria-modal="true" aria-labelledby="flag-title" aria-describedby="flag-desc">
         <button class="dialog-close" data-action="close-flag" aria-label="Close">${ICON.close}</button>
         ${ICON.alertWarn}
-        <h2 class="dialog-title" id="flag-title">Flag for Supervisor</h2>
-        <p class="dialog-desc" id="flag-desc"><strong>${esc(p.name)}</strong> is marked as vaccinated this round. Why is this record wrong?</p>
-        <div class="dialog-actions">${FLAG_SERVED_REASONS.map(r => `<button class="btn btn-secondary" data-action="flag-reason" data-r="${esc(r)}">${esc(r)}</button>`).join("")}</div>
+        <h2 class="dialog-title" id="flag-title">Flag This Record?</h2>
+        <p class="dialog-desc" id="flag-desc"><strong>${esc(p.name)}</strong> is marked as vaccinated this round. Flag this record only if you think it is wrong. Your supervisor will check it.</p>
+        <div class="dialog-actions">
+          <button class="btn btn-primary" data-action="flag-confirm">Flag Record</button>
+          <button class="btn btn-secondary" data-action="close-flag">Cancel</button>
+        </div>
       </div>
     </div>`;
   }
@@ -1177,11 +1199,12 @@
       document.querySelector("#flag-dialog .btn")?.focus();
     },
     "close-flag"() { flagServedOpen = false; render({ focusTitle: false }); },
-    "flag-reason"(btn) {
+    "flag-confirm"() { flagServedOpen = false; state.flagWhy = ""; go("flagReason"); },
+    "flag-submit"() {
+      if (!showErrors({ "fr-why": state.flagWhy ? "" : "Select a reason" })) return;
       const p = member();
-      p.flagServed = true; p.flagReason = btn.dataset.r; save();
-      flagServedOpen = false;
-      render({ focusTitle: false });
+      p.flagServed = true; p.flagReason = state.flagWhy; save();
+      backTo("overview");
       toast("Flagged. Your supervisor will check this record.");
     },
     "close-delivery"() { deliveryAlert = ""; render({ focusTitle: false }); },
@@ -1221,7 +1244,8 @@
     "p-months": v => (state.person.months = v),
     "p-gender": v => (state.person.gender = v),
     "p-mobile": v => (state.person.mobile = v),
-    "r-why": v => (state.reason.why = v)
+    "r-why": v => (state.reason.why = v),
+    "fr-why": v => (state.flagWhy = v)
   };
   function clearError(id) { if (state.errors[id]) showErrors({ [id]: "" }); }
 
