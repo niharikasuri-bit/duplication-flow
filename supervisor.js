@@ -195,7 +195,7 @@
     const all = store.flags, open = sortedFlags(), waiting = store.flags.filter(f => f.status === "Open" && !dsResponse(f.id)).length;
     const n = filteredFlags().length;
     return `${crumbs([["Home", "index.html"], ["Flag Queue"]])}
-      ${head("Flag Queue", "Flags the district supervisor confirmed come here for your final decision. Double vaccinations come first, then the strongest match. Open a flag to see the district supervisor’s response, compare the records and decide.")}
+      ${head("Flag Queue", "Flags the district supervisor confirmed come here for your final decision. Double vaccinations come first, then the strongest match. Open a flag to compare the records and decide.")}
       ${stats([
         [open.length, "Flags to review"],
         [open.filter(f => f.type === "delivery").length, "Possible double vaccinations", true],
@@ -377,7 +377,6 @@
       <div class="review-grid">
         <div class="review-main">
           ${flagSummary(f)}
-          ${dsCard(f)}
           <div class="card card-pad">
             <h2 class="card-title">${isHH ? "Households" : "People"}</h2>
             ${recordPanels(rows, f.a, f.b)}
@@ -426,7 +425,6 @@
       <div class="review-grid">
         <div class="review-main">
           ${flagSummary(f)}
-          ${dsCard(f)}
           <div class="card card-pad">
             <h2 class="card-title">Vaccinations</h2>
             ${recordPanels(rows, { id: "" }, { id: "" })}
