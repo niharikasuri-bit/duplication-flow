@@ -510,6 +510,23 @@ body { display: flex; align-items: center; justify-content: center; min-height: 
 .compare tr:last-child th, .compare tr:last-child td { border-bottom: 0; }
 .compare tr.is-diff td:last-child { background: #FFF4D6; font-weight: 500; }
 
+/* ---------- Household Details: counter + coordinates ---------- */
+.page-desc-2 { margin-top: 12px; }
+.card #p-idnumber-wrap > .field { margin-top: 16px; }
+.body-household .card { padding: 16px 16px 20px; }
+.body-household .card .field + .field { margin-top: 24px; }
+.counter { display: inline-flex; align-items: stretch; height: 40px; border: 1px solid var(--input-border); background: var(--paper); }
+.counter.invalid { border: 2px solid var(--error); }
+.counter-btn { width: 44px; display: grid; place-items: center; background: var(--paper-2); color: var(--primary-1); }
+.counter-btn svg { width: 20px; height: 20px; }
+.counter-btn:disabled { color: #C5C5C5; cursor: not-allowed; }
+.counter-input { width: 64px; border: 0; border-left: 1px solid var(--input-border); border-right: 1px solid var(--input-border); text-align: center; font-size: 16px; font-weight: 500; color: var(--text); background: var(--paper); }
+.counter-input:focus { outline: 2px solid var(--primary-1); outline-offset: -2px; }
+.coords { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.coords dt { font-size: 14px; line-height: 19px; color: var(--text-2); }
+.coords dd { margin-top: 2px; font-size: 16px; line-height: 22px; color: var(--text); font-variant-numeric: tabular-nums; }
+.coords-field .gps { margin-top: 8px; }
+
 /* ---------- Existing alert component: W7 Possible Match Found / W8 Existing matches ---------- */
 .btn-teal { background: var(--primary-2); color: #fff; font-size: 16px; height: 40px; border-radius: 6px; }
 .btn-grey { background: #F0F3F7; color: #363636; font-size: 16px; height: 40px; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,.12); }

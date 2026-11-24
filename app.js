@@ -26,17 +26,21 @@
   const STORE_KEY = "duplication-flow-v1";
 
   const SCREENS = {
-    home:       { name: "Home", desc: "See whether the data on this device is up to date before you start." },
-    search:     { name: "Search Beneficiary", desc: "Type the name of anyone in the household. Search checks the household head and every member, and allows for spelling differences." },
-    household:  { name: "Household Details", desc: "Enter how many people live in the household. The household coordinates are captured automatically. Next, add the household head’s details." },
-    overview:   { name: "Household Overview", desc: "See everyone in this household, add members and record vaccinations." },
-    individual: { name: "Individual Details", desc: "Add the person’s details. They are compared with the people already in this household." },
-    matches:    { name: "Existing Matches", desc: "More than one person in this household looks like the person you’re adding. Compare each one." },
-    reason:     { name: "Add as New Person", desc: "Tell us why this is a different person. Your supervisor sees this reason." },
-    check:      { name: "Vaccination Check", desc: "Check whether this child was already vaccinated this round before you vaccinate." },
-    checklist:  { name: "Vaccination Checklist", desc: "Confirm the vaccination by completing the required checklist." },
+    home:       { name: "Home", desc: "Check the data on this device before you start." },
+    search:     { name: "Search Beneficiary", desc: "Search for the household by the name of any member." },
+    household:  { name: "Household Details", desc: "Add the number of members. The household coordinates are captured automatically." },
+    hoh:        { name: "Head of Household Details", desc: "Add the details of the household head." },
+    overview:   { name: "Household Overview", desc: "See everyone in this household and record vaccinations." },
+    individual: { name: "Individual Details", desc: "Add the details of the person you are registering." },
+    matches:    { name: "Existing Matches", desc: "Select the record that matches the person you are registering." },
+    reason:     { name: "Add as New Person", desc: "Tell us why this is a different person." },
+    check:      { name: "Vaccination Check", desc: "Check whether this child was already vaccinated this round." },
+    checklist:  { name: "Vaccination Checklist", desc: "Confirm the vaccination by completing the checklist." },
     success:    { name: "Vaccination Successful", desc: "Vaccination has been recorded successfully." }
   };
+  // The individual form doubles as the head of household form while a household is being created.
+  const screenKey = () => (state.route === "individual" && state.draftHH ? "hoh" : state.route);
+  const screen = () => SCREENS[screenKey()];
 
   // Alias groups: spelling variants the sound of a name hides (per country, starter list).
   const ALIAS_GROUPS = [
@@ -315,6 +319,8 @@
     stop: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm5 11H7v-2h10v2z"/></svg>',
     ok: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>',
     sync: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>',
+    minus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
+    plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
     pin: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>',
     notFound: '<svg class="empty-art" viewBox="0 0 160 124" fill="none" aria-hidden="true">'
       + '<rect x="34" y="14" width="68" height="84" rx="3" fill="#fff" stroke="#B1B4B6" stroke-width="2"/>'
@@ -498,19 +504,28 @@
     // W4
     household() {
       const d = state.draftHH;
-      const gps = `<div class="latlng">
-              <div><label class="field-label" for="hh-lat">Latitude</label><input class="input" id="hh-lat" value="8.48402" readonly /></div>
-              <div><label class="field-label" for="hh-lng">Longitude</label><input class="input" id="hh-lng" value="-13.22994" readonly /></div>
-            </div>
-            <p class="gps" id="gps-ok">${ICON.gps}Coordinates captured. Accuracy 6 m</p>`;
+      const err = state.errors["hh-size"], n = Number(d.size) || 0;
       return {
         tag: ASSIGNED_AREA,
         body: `${title("Household Details")}
           <div class="card">
-            ${textField({ id: "hh-size", label: "Number of members", value: d.size, required: true, inputmode: "numeric" })}
-            <div class="field" id="hh-loc-group">
+            <div class="field" id="hh-size-group">
+              <label class="field-label" for="hh-size">Number of members${reqMark(true)}</label>
+              <div class="counter ${err ? "invalid" : ""}">
+                <button class="counter-btn" data-action="size-down" aria-label="Decrease number of members" ${n <= 1 ? "disabled" : ""}>${ICON.minus}</button>
+                <input class="counter-input" id="hh-size" inputmode="numeric" maxlength="2" value="${esc(d.size)}" aria-required="true" aria-invalid="${!!err}" aria-describedby="hh-size-help hh-size-err" />
+                <button class="counter-btn" data-action="size-up" aria-label="Increase number of members" ${n >= 99 ? "disabled" : ""}>${ICON.plus}</button>
+              </div>
+              <p class="field-help" id="hh-size-help">Include the household head.</p>
+              ${errorText("hh-size", err)}
+            </div>
+            <div class="field coords-field">
               <p class="field-label">Household coordinates</p>
-              ${gps}
+              <dl class="coords secondary-container">
+                <div><dt>Latitude</dt><dd>8.48402</dd></div>
+                <div><dt>Longitude</dt><dd>-13.22994</dd></div>
+              </dl>
+              <p class="gps">${ICON.gps}Captured automatically. Accuracy 6 m</p>
             </div>
           </div>`,
         footer: `<button class="btn btn-primary" data-action="hh-continue">Continue</button>`
@@ -556,9 +571,9 @@
       const p = state.person;
       return {
         tag: ASSIGNED_AREA,
-        body: `${title("Individual Details")}
+        body: `${title(screen().name)}
           <div class="card">
-            ${textField({ id: "p-name", label: "Name of the individual", value: p.name, required: true })}
+            ${textField({ id: "p-name", label: state.draftHH ? "Name of the household head" : "Name of the individual", value: p.name, required: true })}
             <label class="checkbox head-check"><input type="checkbox" id="p-head" ${p.isHead ? "checked" : ""} ${state.draftHH ? "disabled" : ""}/><span class="box">${ICON.tick}</span>Head of household</label>
             ${selectField({ id: "p-idtype", label: "ID type", value: p.idType, options: ID_TYPES, required: true })}
             <div id="p-idnumber-wrap" ${p.idType === "Not available" ? "hidden" : ""}>${textField({ id: "p-idnumber", label: "ID number", value: p.idNumber, required: true })}</div>
@@ -607,7 +622,7 @@
       return {
         tag: ASSIGNED_AREA,
         body: `${title("Add as New Person")}
-          <p class="page-desc">${esc(state.person.name.trim())} looks like ${esc(names.join(" and "))}, already in this household.</p>
+          <p class="page-desc page-desc-2">${esc(state.person.name.trim())} looks like ${esc(names.join(" and "))}, already in this household.</p>
           <div class="card">
             <fieldset class="field radios ${err ? "has-error" : ""}" id="r-why-group" aria-describedby="r-why-err">
               <legend>Why is this a different person?${reqMark(true)}</legend>
@@ -823,7 +838,7 @@
           <button class="back-btn" data-action="back">${ICON.back}Back</button>
           <button class="help-btn" data-action="help" aria-haspopup="dialog">Help${ICON.help}</button>
         </div>${sysBanner()}` : ""}
-      <div class="body body-${state.route}" id="screen-body">${view.tag ? tagPill(view.tag) : ""}${view.body}</div>
+      <div class="body body-${state.route}" id="screen-body">${view.tag ? tagPill(view.tag) : ""}${withDescription(view.body)}</div>
       ${view.footer ? `<footer class="footer">${view.footer}</footer>` : ""}
       <div class="sheet-backdrop" id="help-sheet" hidden>
         <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="help-title">
@@ -834,12 +849,18 @@
         </div>
       </div>
       <div class="toast" id="toast" role="status" hidden></div>`;
-    document.title = `${SCREENS[state.route].name} – Duplication Flow`;
+    document.title = `${screen().name} – Duplication Flow`;
     if (document.getElementById("compare-dialog")) document.getElementById("pm-title")?.setAttribute("tabindex", "-1"), document.getElementById("pm-title")?.focus();
     else if (document.getElementById("nearby-dialog")) document.querySelector("#nearby-dialog button")?.focus();
     else if (focusTitle) document.getElementById("page-title")?.focus({ preventScroll: true });
     if (state.route === "search" && !state.query) document.getElementById("search-input")?.focus();
     syncDemoPanel();
+  }
+
+  // Page description sits directly under the page title (same pattern as polio-app).
+  function withDescription(body) {
+    if (["home", "success", "matches"].includes(state.route)) return body;
+    return body.replace("</h1>", `</h1><p class="page-desc" id="page-desc">${esc(screen().desc)}</p>`);
   }
 
   function go(route, { replace = false } = {}) {
@@ -874,8 +895,8 @@
 
   let helpReturn = null;
   function openHelp() {
-    document.getElementById("help-title").textContent = SCREENS[state.route].name;
-    document.getElementById("help-desc").textContent = SCREENS[state.route].desc;
+    document.getElementById("help-title").textContent = screen().name;
+    document.getElementById("help-desc").textContent = screen().desc;
     helpReturn = document.activeElement;
     document.getElementById("help-sheet").hidden = false;
     document.querySelector('[data-action="close-help"]').focus();
@@ -937,6 +958,16 @@
     toast(extra.flag ? `${rec.name} added. Your supervisor will check the records.` : `${rec.name} added to the household.`);
   }
 
+  function setSize(n) {
+    n = Math.max(1, Math.min(99, n));
+    state.draftHH.size = String(n);
+    const el = document.getElementById("hh-size");
+    el.value = state.draftHH.size;
+    document.querySelector('[data-action="size-down"]').disabled = n <= 1;
+    document.querySelector('[data-action="size-up"]').disabled = n >= 99;
+    if (state.errors["hh-size"]) { showErrors({ "hh-size": "" }); document.querySelector(".counter").classList.remove("invalid"); }
+  }
+
   // ---------- Actions ----------
   const ACTIONS = {
     back,
@@ -965,13 +996,15 @@
     "open-hh"(btn) { state.hhId = btn.dataset.id; go("overview"); },
     register() {
       const hits = searchHouseholds(state.query.trim()) || [];
-      state.draftHH = { size: "", searchTerm: state.query.trim(), candidates: hits.map(h => h.h.id) };
+      state.draftHH = { size: "1", searchTerm: state.query.trim(), candidates: hits.map(h => h.h.id) };
       store.log.push({ term: state.query.trim(), shown: hits.length, at: new Date().toISOString() }); save();
       nearby = [];
       go("household");
     },
 
     // W4
+    "size-down"() { setSize((Number(state.draftHH.size) || 1) - 1); },
+    "size-up"() { setSize((Number(state.draftHH.size) || 0) + 1); },
     "hh-continue"() {
       const n = Number(state.draftHH.size);
       if (!showErrors({ "hh-size": !state.draftHH.size ? "Enter the number of members" : !(n >= 1 && n <= 99) ? "Enter a number from 1 to 99" : "" })) return;
@@ -1086,7 +1119,7 @@
 
   // Form fields write straight into state; no re-render, so focus is kept.
   const FIELD_MAP = {
-    "hh-size": v => (state.draftHH.size = v),
+    "hh-size": v => (state.draftHH.size = v.replace(/\D/g, "").slice(0, 2)),
     "p-name": v => (state.person.name = v),
     "p-idtype": v => (state.person.idType = v),
     "p-idnumber": v => (state.person.idNumber = v),
