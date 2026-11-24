@@ -220,11 +220,11 @@
     </div>
     ${syncNotice(f)}
     <ul class="dq-legend" aria-label="Highlight key"><li class="k-same">Same</li><li class="k-similar">Similar</li><li class="k-diff">Different</li></ul>`;
-  const doneCard = f => f.status !== "Open" ? `<div class="card dq-done">${statusPill(f.status)}<p>Root cause: ${esc(f.rootCause || "–")}</p>${f.comment ? `<p>${esc(f.comment)}</p>` : ""}</div>` : "";
+  const doneCard = f => f.status !== "Open" ? `<div class="card dq-done">${statusPill(f.status)}<p>Reason for decision: ${esc(f.rootCause || "–")}</p>${f.comment ? `<p>${esc(f.comment)}</p>` : ""}</div>` : "";
 
   function reviewDelivery(f) {
     const done = f.status !== "Open", [d1, d2] = f.deliveries;
-    const rows = [["Child", d1.person || f.title, d2.person || f.title, "similar"], ["Age", f.age, f.age], ["Household", f.household, f.household], ["Time", d1.time, d2.time, false], ["Household coordinates", d1.coords, d2.coords, false]];
+    const rows = [["Child", d1.person || f.title, d2.person || f.title, "similar"], ["Gender", f.gender, f.gender], ["Age", f.age, f.age], ["Household", f.household, f.household], ["Round", f.round, f.round], ["Vaccinated", d1.time, d2.time, false], ["Household coordinates", d1.coords, d2.coords, false]];
     return {
       title: "Review Duplicates",
       body: `${flagHead(f)}
@@ -252,7 +252,7 @@
       title: "Review Duplicates",
       body: `${flagHead(f)}
         ${compareTable(rows, `Record 1<span class="pm-id">ID ${esc(f.a.id)}</span>`, `Record 2<span class="pm-id">ID ${esc(f.b.id)}</span>`, "Record 1 compared with record 2")}
-        ${isHH ? `<h2 class="dq-section">People in both households</h2>${people}` : ""}
+        ${isHH ? `<div class="card dq-people"><h2 class="dq-section">People in both households</h2>${people}</div>` : ""}
         ${doneCard(f)}`,
       footer: done ? "" : `<button class="btn btn-primary" data-action="decide" data-d="Confirmed">Confirm Duplicate</button>
         <button class="btn btn-secondary" data-action="decide" data-d="Not a duplicate">Not a Duplicate</button>`
@@ -267,10 +267,10 @@
       body: `<p class="dq-ctx ${conf ? "ctx-ok" : ""}">${esc(f.id)} · ${esc(f.title)}</p>
         <div class="card">
           <fieldset class="radios" id="cause-group" aria-describedby="cause-err">
-            <legend class="field-label">Root cause<span class="req">*</span></legend>
+            <legend class="field-label">Reason for decision<span class="req">*</span></legend>
             ${(f.type === "delivery" ? DELIVERY_CAUSES : ROOT_CAUSES).map(c => `<label class="radio"><input type="radio" name="cause" value="${esc(c)}" ${state.cause === c ? "checked" : ""}/>${esc(c)}</label>`).join("")}
           </fieldset>
-          <p class="field-error" id="cause-err" hidden>Select a root cause</p>
+          <p class="field-error" id="cause-err" hidden>Select a reason for the decision</p>
           <div class="field dq-comment">
             <label class="field-label" for="dq-comment">Comment</label>
             <textarea class="input" id="dq-comment" rows="3">${esc(state.comment)}</textarea>

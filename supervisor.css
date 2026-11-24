@@ -262,3 +262,10 @@ table.data tr.is-alert td:first-child { box-shadow: inset 3px 0 0 var(--error); 
 .sync-notice { margin-top: 16px; display: flex; gap: 10px; padding: 12px; border-radius: 4px; background: #FFF4D6; border-left: 4px solid #B57F00; color: var(--text); font-size: 14px; line-height: 19px; }
 .sync-notice > svg { flex: 0 0 20px; width: 20px; height: 20px; color: #B57F00; }
 .sync-notice-title { font-weight: 700; color: #6B4A00; margin-bottom: 2px; }
+
+/* Review summary: label above value, in a row */
+.review-main > .card + .card, .review-main > .sync-notice + .card { margin-top: 16px; }
+.review-main > .card:first-child { margin-top: 16px; }
+.flag-kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px 24px; }
+.flag-kv dt { font-size: 12px; line-height: 16px; color: var(--text-2); }
+.flag-kv dd { margin-top: 4px; font-size: 16px; line-height: 20px; font-weight: 700; color: var(--primary-2); }
