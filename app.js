@@ -412,7 +412,6 @@
     if (!served && p.status === "pending") chips.push(`<span class="status-chip chip-pending">${ICON.hourglass}Visit Pending</span>`);
     if (!served && p.status === "not") chips.push(`<span class="status-chip chip-info">Not Administered</span>`);
     if (served) chips.push(`<span class="status-chip chip-ok">${ICON.tick}Vaccinated</span>`);
-    if (served && p.status !== "done") chips.push(`<span class="status-chip chip-info">Linked Record</span>`);
     if (p.flagServed) chips.push(`<span class="status-chip chip-warn">${ICON.warn}Flagged for supervisor</span>`);
     return chips.length ? `<div class="chip-row">${chips.join("")}</div>` : "";
   }
