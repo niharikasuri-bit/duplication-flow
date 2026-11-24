@@ -394,6 +394,7 @@ body { display: flex; align-items: center; justify-content: center; min-height: 
 .sync-rows .pair dt { font-weight: 400; color: var(--text-2); }
 .sync-rows .pair dd { text-align: right; font-weight: 500; }
 .sync-card .notice { margin-top: 12px; }
+.body-home > .sync-card { margin-top: 0; }
 .sync-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
 .sync-summary .sep { width: 1px; height: 12px; background: var(--border); }
 .sync-summary { margin-top: 8px; font-size: 12px; line-height: 16px; color: var(--text-2); }

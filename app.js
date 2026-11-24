@@ -28,7 +28,7 @@
   const SCREENS = {
     home:       { name: "Home", desc: "See whether the data on this device is up to date before you start." },
     search:     { name: "Search Beneficiary", desc: "Type the name of anyone in the household. Search checks the household head and every member, and allows for spelling differences." },
-    household:  { name: "Household Details", desc: "Add the household head and capture the household location. Nearby households are checked so the same household is not registered twice." },
+    household:  { name: "Household Details", desc: "Enter how many people live in the household. The household coordinates are captured automatically. Next, add the household head’s details." },
     overview:   { name: "Household Overview", desc: "See everyone in this household, add members and record vaccinations." },
     individual: { name: "Individual Details", desc: "Add the person’s details. They are compared with the people already in this household." },
     matches:    { name: "Existing Matches", desc: "More than one person in this household looks like the person you’re adding. Compare each one." },
@@ -429,6 +429,9 @@
       `${store.pending} waiting to sync`
     ];
     let msg = "", btn = "";
+    if (ok && store.pending > 0) {
+      btn = `<button class="btn btn-secondary btn-sm" data-action="retry-sync">${ICON.sync}Sync Now</button>`;
+    }
     if (!ok) {
       msg = store.continued
         ? notice("error", "<b>Sync failed.</b> You’re continuing without the latest data. New records are checked again once they sync.")
@@ -465,17 +468,9 @@
   const VIEWS = {
     // W1
     home() {
-      const p = store.progress, pct = Math.min(100, Math.round((p.completed / p.target) * 100));
       const tile = (action, icon, label) => `<li><button class="home-tile" data-action="${action}">${ICON[icon]}<span>${esc(label)}</span></button></li>`;
       return {
         body: `<h1 class="sr-only" id="page-title" tabindex="-1">Home</h1>
-          <section class="card progress-card" aria-labelledby="progress-title">
-            <h2 class="progress-title" id="progress-title">My Progress</h2>
-            <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="${p.target}" aria-valuenow="${p.completed}" aria-labelledby="progress-title">
-              <div class="progress-fill" style="width:${pct}%"></div>
-            </div>
-            <p class="progress-text"><span>${p.completed} completed</span> / ${p.target}</p>
-          </section>
           ${syncCard()}
           <ul class="home-tiles">
             ${tile("start-search", "family", "Enumeration and Vaccination")}
@@ -512,13 +507,12 @@
         tag: ASSIGNED_AREA,
         body: `${title("Household Details")}
           <div class="card">
-            ${textField({ id: "hh-head", label: "Household head name", value: d.head, required: true })}
+            ${textField({ id: "hh-size", label: "Number of members", value: d.size, required: true, inputmode: "numeric" })}
             <div class="field" id="hh-loc-group">
               <p class="field-label">Household coordinates</p>
               ${gps}
             </div>
-          </div>
-          ${nearbyDialogHtml()}`,
+          </div>`,
         footer: `<button class="btn btn-primary" data-action="hh-continue">Continue</button>`
       };
     },
@@ -549,7 +543,7 @@
           <div class="card hh-overview">
             <dl class="pairs">
               <div class="pair"><dt>Household Head</dt><dd>${esc(head.name)}</dd></div>
-              <div class="pair"><dt>Member Count</dt><dd>${String(h.members.length).padStart(2, "0")}</dd></div>
+              <div class="pair"><dt>Member Count</dt><dd>${String(Math.max(h.size || 0, h.members.length)).padStart(2, "0")}</dd></div>
             </dl>
             <ul class="member-list">${h.members.map(card).join("")}</ul>
           </div>`,
@@ -573,7 +567,8 @@
             ${textField({ id: "p-mobile", label: "Mobile number", value: p.mobile, type: "tel", inputmode: "tel" })}
           </div>
           ${state.compareOpen ? compareDialogHtml() : ""}
-          ${state.matches.length ? quickReasonHtml() : ""}`,
+          ${state.matches.length ? quickReasonHtml() : ""}
+          ${nearbyDialogHtml()}`,
         footer: `<button class="btn btn-primary" data-action="person-continue">Continue</button>`
       };
     },
@@ -927,7 +922,7 @@
     if (state.draftHH) {
       const d = state.draftHH;
       const id = `hh-${Date.now()}`;
-      store.households.unshift({ id, head: rec.name, m: 0, lat: 8.48402, lng: -13.22994, accuracy: 6, members: [rec], meta: { searchTerm: d.searchTerm, candidates: d.candidates, tags: recordTags() } });
+      store.households.unshift({ id, head: rec.name, size: Number(d.size) || 1, m: 0, lat: 8.48402, lng: -13.22994, accuracy: 6, members: [rec], meta: { searchTerm: d.searchTerm, candidates: d.candidates, tags: recordTags() } });
       state.hhId = id;
       state.draftHH = null;
       queueUpload();
@@ -970,7 +965,7 @@
     "open-hh"(btn) { state.hhId = btn.dataset.id; go("overview"); },
     register() {
       const hits = searchHouseholds(state.query.trim()) || [];
-      state.draftHH = { head: state.query.trim(), searchTerm: state.query.trim(), candidates: hits.map(h => h.h.id) };
+      state.draftHH = { size: "", searchTerm: state.query.trim(), candidates: hits.map(h => h.h.id) };
       store.log.push({ term: state.query.trim(), shown: hits.length, at: new Date().toISOString() }); save();
       nearby = [];
       go("household");
@@ -978,28 +973,21 @@
 
     // W4
     "hh-continue"() {
-      const d = state.draftHH;
-      if (!showErrors({ "hh-head": d.head.trim() ? "" : "Enter the household head name" })) return;
-      nearby = deviceHouseholds().filter(h => h.m <= NEARBY_M).map(h => {
-        let best = null;
-        for (const p of h.members) { const s = nameSim(d.head, p.name); if (s >= 0.8 && (!best || s > best.s)) best = { s, matched: p.name }; }
-        return best && { h, ...best };
-      }).filter(Boolean).sort((a, b) => b.s - a.s);
-      if (nearby.length) return render({ focusTitle: false });
-      ACTIONS["nearby-new"]();
+      const n = Number(state.draftHH.size);
+      if (!showErrors({ "hh-size": !state.draftHH.size ? "Enter the number of members" : !(n >= 1 && n <= 99) ? "Enter a number from 1 to 99" : "" })) return;
+      // Next: the head of household's details, on the same form used for every individual.
+      state.person = { ...blankPerson(), name: state.draftHH.searchTerm, isHead: true };
+      go("individual");
     },
-    "close-nearby"() { nearby = []; render(); },
+    "close-nearby"() { nearby = []; render({ focusTitle: false }); },
     "nearby-open"(btn) {
       nearby = []; state.draftHH = null; state.hhId = btn.dataset.id;
       state.history = state.history.slice(0, state.history.lastIndexOf("search") + 1);
       state.route = "overview"; render();
       toast("Opened the existing household. No new household created.");
     },
-    "nearby-new"() {
-      nearby = [];
-      state.person = { ...blankPerson(), name: state.draftHH.head.trim(), isHead: true };
-      go("individual");
-    },
+    // No, Create New Household: save the head and create the household.
+    "nearby-new"() { nearby = []; savePerson(); },
 
     // W5
     "add-member"() { state.person = blankPerson(); go("individual"); },
@@ -1020,7 +1008,15 @@
         "p-age": ageErr
       });
       if (!ok) return;
-      if (state.draftHH) return savePerson();
+      if (state.draftHH) {
+        nearby = deviceHouseholds().filter(h => h.m <= NEARBY_M).map(h => {
+          let best = null;
+          for (const m of h.members) { const s = nameSim(p.name, m.name); if (s >= 0.8 && (!best || s > best.s)) best = { s, matched: m.name }; }
+          return best && { h, ...best };
+        }).filter(Boolean).sort((a, b) => b.s - a.s);
+        if (nearby.length) return render({ focusTitle: false });
+        return savePerson();
+      }
       state.matches = hh().members.map(m => compare(m, p)).filter(Boolean).sort((a, b) => TIER_RANK[b.tier] - TIER_RANK[a.tier] || b.n - a.n);
       state.reason = { why: "", supervisor: false };
       if (!state.matches.length) return savePerson();
@@ -1090,7 +1086,7 @@
 
   // Form fields write straight into state; no re-render, so focus is kept.
   const FIELD_MAP = {
-    "hh-head": v => (state.draftHH.head = v),
+    "hh-size": v => (state.draftHH.size = v),
     "p-name": v => (state.person.name = v),
     "p-idtype": v => (state.person.idType = v),
     "p-idnumber": v => (state.person.idNumber = v),
