@@ -538,7 +538,11 @@
       const h = hh();
       const head = h.members.find(p => p.head) || { name: h.head };
       const card = p => {
+        // Already served this round: no Take Action. Show who, when and where, with an option to flag.
         const btn = !isChild(p) ? ""
+          : p.status === "done"
+            ? `<p class="served-line">Vaccinated ${esc(p.servedAt.toLowerCase())} by ${esc(p.servedBy)} at ${esc(p.servedWhere || "this household")}.</p>
+               ${p.flag ? "" : `<button class="btn btn-secondary card-btn" data-action="flag-served" data-id="${p.id}">Flag for Supervisor</button>`}`
           : p.status === "not"
             ? `<button class="btn btn-secondary card-btn" data-action="unable" data-id="${p.id}">Unable to Vaccinate</button>`
             : `<button class="btn btn-primary card-btn" data-action="take-action" data-id="${p.id}">Take Action</button>`;
@@ -1116,6 +1120,12 @@
 
     // W10
     vaccinate() { deliveryAlert = ""; go("checklist"); },
+    "flag-served"(btn) {
+      state.memberId = btn.dataset.id;
+      member().flag = true; save();
+      render({ focusTitle: false });
+      toast("Flagged. Your supervisor will check this child’s records.");
+    },
     "close-delivery"() { deliveryAlert = ""; render({ focusTitle: false }); },
     hold() {
       member().flag = true; save();
