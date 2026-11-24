@@ -309,7 +309,7 @@
       title: "",
       body: `<div class="card panel-card">
           <div class="success-panel">${ICON.check}<h1 class="success-title" id="page-title" tabindex="-1">Decision Saved</h1></div>
-          <p class="success-desc">${esc(f.id)} is marked ${f.status === "Confirmed" ? (f.type === "delivery" ? "as a double vaccination" : "as a confirmed duplicate. The records are linked") : "as not a duplicate"}. Workers see the change after their next sync.</p>
+          <p class="success-desc">${esc(f.id)} is marked ${f.status === "Confirmed" ? (f.type === "delivery" ? "as a double vaccination" : "as a confirmed duplicate. The records are linked") : "as not a duplicate"}. ${f.status === "Confirmed" ? "It goes to your supervisor for the final decision." : "The flag is closed and does not go to your supervisor."}</p>
           <div class="panel-actions">
             ${next ? `<button class="btn btn-primary" data-action="open-flag" data-id="${esc(next.id)}" data-fresh="1">Review Next Flag</button>` : ""}
             <button class="btn btn-secondary" data-action="go-home">Go to Home</button>

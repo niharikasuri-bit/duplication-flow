@@ -165,8 +165,8 @@
   // ---------- S1 Flag queue ----------
   function sortedFlags() {
     // A flag queue holds only flags waiting for review; a decided flag leaves the queue.
-    // Only flags the district supervisor has reviewed reach the supervisor.
-    return store.flags.filter(f => f.status === "Open" && dsResponse(f.id)).sort((x, y) =>
+    // Only flags the district supervisor confirmed reach the supervisor. Not a duplicate closes the flag there.
+    return store.flags.filter(f => f.status === "Open" && (dsResponse(f.id) || {}).decision === "Confirmed").sort((x, y) =>
       ((TYPE_RANK[y.type] || 0) - (TYPE_RANK[x.type] || 0)) ||
       ((TIER_RANK[y.tier] || 0) - (TIER_RANK[x.tier] || 0)));
   }
@@ -195,7 +195,7 @@
     const all = store.flags, open = sortedFlags(), waiting = store.flags.filter(f => f.status === "Open" && !dsResponse(f.id)).length;
     const n = filteredFlags().length;
     return `${crumbs([["Home", "index.html"], ["Flag Queue"]])}
-      ${head("Flag Queue", "Flags the district supervisor has reviewed come here for your final decision. Double vaccinations come first, then the strongest match. Open a flag to see the district supervisor’s response, compare the records and decide.")}
+      ${head("Flag Queue", "Flags the district supervisor confirmed come here for your final decision. Double vaccinations come first, then the strongest match. Open a flag to see the district supervisor’s response, compare the records and decide.")}
       ${stats([
         [open.length, "Flags to review"],
         [open.filter(f => f.type === "delivery").length, "Possible double vaccinations", true],
