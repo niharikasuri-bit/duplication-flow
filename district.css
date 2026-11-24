@@ -172,3 +172,4 @@
 
 /* Home tile: icon and label centred in the tile */
 .home-tile { justify-content: center; padding: 12px 6px; }
+.dq-ctx-sub { display: block; margin-top: 2px; font-size: 14px; line-height: 19px; font-weight: 400; color: var(--text); }

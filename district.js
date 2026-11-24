@@ -301,9 +301,8 @@
   function decide() {
     const f = flag(), conf = state.decision === "Confirmed", del = f.type === "delivery";
     return {
-      title: conf ? (del ? "Confirm Double Vaccination" : "Confirm Duplicate") : "Not a Duplicate",
-      desc: conf ? (del ? "The child is recorded as vaccinated twice this round." : "Both records are kept, marked as the same and linked.") : (del ? "The earlier vaccination stands." : "This pair won’t be flagged again unless a record changes."),
-      body: `<p class="dq-ctx ${conf ? "ctx-ok" : ""}">${esc(f.id)} · ${esc(f.title)}</p>
+      title: "Decision",
+      body: `<p class="dq-ctx ${conf ? "ctx-ok" : ""}">${conf ? (del ? "Confirm double vaccination" : "Confirm duplicate") : "Not a duplicate"}<span class="dq-ctx-sub">${esc(f.id)} · ${esc(f.title)}</span></p>
         <div class="card">
           <fieldset class="radios" id="cause-group" aria-describedby="cause-err">
             <legend class="field-label">Reason for decision<span class="req">*</span></legend>
