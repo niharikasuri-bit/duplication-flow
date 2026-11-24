@@ -430,9 +430,9 @@
     ];
     let msg = "", btn = "";
     if (!ok) {
-      msg = notice("error", store.continued
-        ? "<b>Sync failed.</b> You’re continuing without the latest data. New records are checked again once they sync."
-        : "<b>Sync failed.</b> Search may miss households and recent vaccinations may be missing. Try again before you start.");
+      msg = store.continued
+        ? notice("error", "<b>Sync failed.</b> You’re continuing without the latest data. New records are checked again once they sync.")
+        : "";
       btn = `<button class="btn btn-secondary btn-sm" data-action="retry-sync">${ICON.sync}Retry Sync</button>
         ${store.retryFailed && !store.continued ? `<button class="btn-link" data-action="continue-failed">Continue Without Sync</button>` : ""}`;
     }
