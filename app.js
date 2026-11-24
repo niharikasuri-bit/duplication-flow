@@ -110,7 +110,7 @@
     pending: 0,
     // Each sync type succeeds or fails on its own; a partial download counts as failed.
     sync: { reg: true, status: true, flags: true },
-    upload: "ok",             // ok | failed
+    upload: "ok",             // ok | pending | failed
     retryWorks: true,
     retryFailed: false,       // a retry has failed → offer Continue Without Sync
     continued: false,         // worker carried on after a failed sync
@@ -439,12 +439,16 @@
       msg = notice("error", `<b>Sync to the server failed.</b> ${esc(plural(store.pending, "record"))} saved on this device didn’t sync.`);
       btn = `<button class="btn btn-secondary btn-sm" data-action="retry-upload">${ICON.sync}Retry Sync</button>`;
     }
+    // Pill: failed (red) > pending, records waiting to sync (amber) > succeeded (green).
+    const failed = !ok || store.upload === "failed";
+    const pending = !failed && store.pending > 0;
+    const pill = failed ? ["error", "Sync failed"] : pending ? ["warn", "Sync pending"] : ["ok", "Sync succeeded"];
     return `<section class="card sync-card" aria-labelledby="sync-title">
       <div class="sync-head">
         <h2 class="card-title" id="sync-title">Data on this device</h2>
-        <span class="pill pill-${ok ? "ok" : "error"}">${ok ? "Sync succeeded" : "Sync failed"}</span>
+        <span class="pill pill-${pill[0]}">${pill[1]}</span>
       </div>
-      <p class="sync-summary">${summary.map(esc).join('<span aria-hidden="true"> · </span>')}</p>
+      <p class="sync-summary">${summary.map(t => `<span>${esc(t)}</span>`).join('<span class="sep" aria-hidden="true"></span>')}</p>
       ${msg}
       ${btn ? `<div class="sync-actions">${btn}</div>` : ""}
     </section>`;
@@ -1135,7 +1139,8 @@
     }
     if (e.target.id === "demo-upload") {
       store.upload = e.target.value;
-      if (store.upload === "failed" && !store.pending) store.pending = 3;
+      if (store.upload !== "ok" && !store.pending) store.pending = 3;
+      if (store.upload === "ok") store.pending = 0;
     }
     if (e.target.id === "demo-retry") store.retryWorks = e.target.value === "yes";
     save();
