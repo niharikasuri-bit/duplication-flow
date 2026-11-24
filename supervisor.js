@@ -9,7 +9,7 @@
 (function () {
   "use strict";
 
-  const STORE_KEY = "duplication-supervisor-v4";
+  const STORE_KEY = "duplication-supervisor-v5";
   const TIER_RANK = { Definite: 3, Strong: 2, Low: 1 };
   const ROOT_CAUSES = ["Sync failed", "Spelling", "Info mismatch", "Area overlap", "Other"];
   const DELIVERY_CAUSES = ["Sync failed", "Area overlap", "Other"];
@@ -18,7 +18,7 @@
   const SEED_FLAGS = () => [
     {
       id: "FLG-1043", type: "vaccination", status: "Open", area: "Kanu", team: "Team 3", collector: "S. Turay", raised: "Today, 11:20", source: "Raised by worker",
-      title: "Aminata Turay", household: "Abu Turay", reason: "Wrong child marked as vaccinated", deliverBack: true,
+      title: "Aminata Turay", household: "Abu Turay", reason: "Wrong child marked as vaccinated",
       note: "Vaccination was recorded on Aminata, but her brother Alusine was the one vaccinated.",
       child: { id: "IND-56012", name: "Aminata Turay", gender: "Female", age: "3 years 2 months", dob: "14/09/2023" },
       delivery: { time: "Today, 09:48", coords: "8.49002, -13.22561", worker: "S. Turay (Team 3)", sync: "Succeeded, today 08:15" },
@@ -26,7 +26,7 @@
     },
     {
       id: "FLG-1041", type: "vaccination", status: "Open", area: "Solimbo", team: "Team 1", collector: "M. Kargbo", raised: "Today, 09:40", source: "Raised by worker",
-      title: "Isatu Conteh", household: "Foday Conteh", reason: "Child was not vaccinated", deliverBack: true,
+      title: "Isatu Conteh", household: "Foday Conteh", reason: "Child was not vaccinated",
       note: "The caregiver says Isatu was not home on that day.",
       child: { id: "IND-55340", name: "Isatu Conteh", gender: "Female", age: "1 year 4 months", dob: "02/07/2025" },
       delivery: { time: "Yesterday, 14:12", coords: "8.48530, -13.23011", worker: "A. Sesay (Team 1)", sync: "Failed. Last succeeded yesterday 07:40", failed: true },
@@ -306,7 +306,7 @@
     const done = f.status !== "Open";
     const causes = kind === "delivery" ? DELIVERY_CAUSES : ROOT_CAUSES;
     const choices = kind === "vaccination"
-      ? [["Confirmed", "Confirm flag", "The vaccination record is wrong. It is marked as wrong and the child shows not vaccinated."],
+      ? [["Confirmed", "Confirm flag", "The vaccination record is wrong. It is marked as wrong and the child shows not vaccinated, so the worker can vaccinate."],
          ["Not a duplicate", "Record is correct", "The vaccination record stands."]]
       : kind === "delivery"
       ? [["Confirmed", "Confirm double delivery", "The child was vaccinated twice this round."],
@@ -380,7 +380,6 @@
             </div>
             <div class="rec-notes">
               <div><h3>Worker’s reason</h3><p>“${esc(f.reason)}”${f.note ? `. ${esc(f.note)}` : ""}</p></div>
-              ${f.deliverBack ? `<div><h3>On the worker’s app</h3><p>Take Action is back on this child’s card with a warning, so the child can still be vaccinated while you review.</p></div>` : ""}
             </div>
           </div>
         </div>

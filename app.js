@@ -410,7 +410,7 @@
     const served = isServed(p);
     if (!served && p.status === "pending") chips.push(`<span class="status-chip chip-pending">${ICON.hourglass}Visit Pending</span>`);
     if (!served && p.status === "not") chips.push(`<span class="status-chip chip-info">Not Administered</span>`);
-    if (served && !p.deliverBack) chips.push(`<span class="status-chip chip-ok">${ICON.tick}Vaccinated</span>`);
+    if (served && !p.flagServed) chips.push(`<span class="status-chip chip-ok">${ICON.tick}Vaccinated</span>`);
     if (p.flagServed) chips.push(`<span class="status-chip chip-warn">${ICON.warn}Flagged for supervisor</span>`);
     return chips.length ? `<div class="chip-row">${chips.join("")}</div>` : "";
   }
@@ -554,7 +554,7 @@
         // Already served this round: no Take Action. Show who, when and where, with an option to flag.
         const served = isServed(p);
         const btn = !isChild(p) ? ""
-          : served && !p.deliverBack
+          : served
             ? `${p.flagServed ? "" : `<button class="btn btn-secondary card-btn" data-action="flag-served" data-id="${p.id}">Flag for Supervisor</button>`}`
           : p.status === "not"
             ? `<button class="btn btn-secondary card-btn" data-action="unable" data-id="${p.id}">Unable to Vaccinate</button>`
@@ -566,7 +566,6 @@
           </div>
           <p class="member-sub"><span>${esc(p.gender || "Gender not recorded")}</span><span class="sep" aria-hidden="true"></span><span>${esc(ageLabel(p.age))}</span></p>
           ${statusChip(p)}
-          ${isChild(p) && p.deliverBack ? `<p class="card-warn">${ICON.warn}<span>This vaccination record is flagged as wrong. Ask the caregiver, then vaccinate if needed.</span></p>` : ""}
           ${isChild(p) && !served && !store.synced ? `<p class="card-warn">${ICON.warn}<span>Sync failed. Recent vaccinations may be missing. Ask the caregiver before you vaccinate.</span></p>` : ""}
           ${btn}
         </article></li>`;
@@ -1202,10 +1201,9 @@
       if (!showErrors({ "fr-why": state.flagWhy ? "" : "Select a reason" })) return;
       const p = member();
       p.flagServed = true; p.flagReason = state.flagWhy;
-      p.deliverBack = ["Wrong child marked as vaccinated", "Child was not vaccinated"].includes(state.flagWhy);
       save();
       backTo("overview");
-      toast(p.deliverBack ? "Flagged. Your supervisor will check this record. You can still vaccinate this child." : "Flagged. Your supervisor will check this record.");
+      toast("Flagged. Your supervisor will check this record.");
     },
     "close-delivery"() { deliveryAlert = ""; render({ focusTitle: false }); },
     hold() {
@@ -1216,7 +1214,7 @@
     },
     "submit-checklist"() {
       const p = member();
-      p.status = "done"; p.deliverBack = false; p.servedAt = "Today, " + new Date().toTimeString().slice(0, 5); p.servedBy = "You";
+      p.status = "done"; p.servedAt = "Today, " + new Date().toTimeString().slice(0, 5); p.servedBy = "You";
       store.progress.completed++;
       queueUpload();
       state.history = state.history.filter(r => r !== "check" && r !== "checklist");
