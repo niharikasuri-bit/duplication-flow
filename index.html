@@ -2,47 +2,39 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta name="theme-color" content="#0B4B66" />
-<title>Duplication Flow</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Duplication Flow – Select Your Role</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css" />
+<link rel="stylesheet" href="supervisor.css" />
 </head>
-<body>
-  <aside class="demo" id="demo" aria-labelledby="demo-title">
-    <h2 id="demo-title">Prototype controls</h2>
-    <p class="demo-note">Not part of the app. Switch states to see how each screen responds.</p>
-    <label for="demo-sync">Sync</label>
-    <select id="demo-sync">
-      <option value="ok">Sync succeeded</option>
-      <option value="pending">Sync pending</option>
-      <option value="failed">Sync failed</option>
-    </select>
-    <label for="demo-retry">When the worker retries</label>
-    <select id="demo-retry">
-      <option value="yes">Retry works</option>
-      <option value="no">Retry fails</option>
-    </select>
-    <p class="demo-stat">Records waiting to sync: <b id="demo-pending">0</b></p>
-    <button id="demo-reset" type="button">Reset demo data</button>
-
-    <h3>Try these</h3>
-    <ul>
-      <li>Search <b>Mamadu</b> or <b>Fatma</b>: spelling variants still find the household.</li>
-      <li>Search <b>Fatou Camara</b>, register, enter the number of members, then the head’s details: a household 35 m away has a similar name.</li>
-      <li>Open <b>Mohammed Diallo</b>, add <b>Ibrahim Diallo</b>, male, 0 years 9 months: one possible match.</li>
-      <li>Open <b>Seydou Kamara</b>, add <b>Kadija Kamara</b>, female, 0 years 10 months: two possible matches.</li>
-      <li>Open <b>Muhammad Bah</b>, add <b>Husain Bah</b>, male, 1 year 11 months: a weak match with a one-tap reason.</li>
-      <li>Take Action on <b>Aminata Diallo</b>: already vaccinated this round.</li>
-      <li>Set sync to <b>Sync failed</b>, then search <b>Barry</b>: that household wasn’t downloaded.</li>
-      <li>With <b>Sync failed</b>, Take Action on <b>Ibrahima Diallo</b>: vaccination sync failed warning.</li>
+<body class="role-page">
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">HCM</span><span>DIGIT HCM</span></div>
+    <div class="topbar-right"><span>English</span><span class="brand-digit">DIGIT</span></div>
+  </header>
+  <main class="role-main">
+    <h1 class="page-title">Select Your Role</h1>
+    <p class="page-desc">Choose how you want to use the registration deduplication prototype.</p>
+    <ul class="role-list">
+      <li>
+        <a class="role-card" href="worker.html">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17 1H7a2 2 0 0 0-2 2v18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm0 18H7V5h10v14z"/></svg>
+          <span class="role-name">Frontline Worker</span>
+          <span class="role-desc">Search households, register people and record vaccinations on the mobile app.</span>
+          <span class="btn btn-primary">Continue as Frontline Worker</span>
+        </a>
+      </li>
+      <li>
+        <a class="role-card" href="supervisor.html">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+          <span class="role-name">Supervisor</span>
+          <span class="role-desc">Review possible duplicates and delivery alerts, approve spelling variants and see insights.</span>
+          <span class="btn btn-primary">Continue as Supervisor</span>
+        </a>
+      </li>
     </ul>
-  </aside>
-
-  <main class="phone" id="phone" aria-live="polite"></main>
-
-  <script src="app.js"></script>
+  </main>
 </body>
 </html>
