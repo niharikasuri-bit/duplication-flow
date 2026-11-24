@@ -255,7 +255,7 @@
   }
   const LEGEND = `<ul class="m-legend" aria-label="Highlight key"><li class="m-same">Same</li><li class="m-similar">Similar</li><li class="m-diff">Different</li></ul>`;
   function recordPanels(rows, a, b) {
-    return `${LEGEND}<div class="rec-pair">${recPanel("A", "Record A", a.id, rows, "A")}${recPanel("B", "Record B", b.id, rows, "B")}</div>`;
+    return `${LEGEND}<div class="rec-pair">${recPanel("A", "Record 1", a.id, rows, "A")}${recPanel("B", "Record 2", b.id, rows, "B")}</div>`;
   }
   // People in both households: each pair uses the same Household A / Household B containers and highlights.
   function personPairs(pairs) {
@@ -266,14 +266,14 @@
                      : [["Name", a.name, "", false], ["Gender", a.gender, "", false], ["Age", a.age, "", false]];
       return `<div class="person-pair">
           <div class="person-pair-head"><h4>Person ${i + 1}</h4>${p.match ? tierTag(p.match) : `<span class="pair-none">No match in household B</span>`}</div>
-          <div class="rec-pair">${recPanel(`p${i}A`, "Household A", "", rows, "A")}${b ? recPanel(`p${i}B`, "Household B", "", rows, "B")
-            : `<section class="rec rec-empty" aria-labelledby="rec-p${i}B"><header class="rec-head"><h3 id="rec-p${i}B">Household B</h3></header><p>No matching person in household B.</p></section>`}</div>
+          <div class="rec-pair">${recPanel(`p${i}A`, "Record 1", "", rows, "A")}${b ? recPanel(`p${i}B`, "Record 2", "", rows, "B")
+            : `<section class="rec rec-empty" aria-labelledby="rec-p${i}B"><header class="rec-head"><h3 id="rec-p${i}B">Record 2</h3></header><p>No matching person in record 2.</p></section>`}</div>
         </div>`;
     }).join("");
   }
   function cmpTable(rows, aTitle, bTitle) {
     return `<table class="cmp">
-      <caption class="sr-only">Record A compared with record B</caption>
+      <caption class="sr-only">Record 1 compared with record 2</caption>
       <thead><tr><th scope="col">Field</th><th scope="col">${aTitle}</th><th scope="col">${bTitle}</th></tr></thead>
       <tbody>${rows.map(([l, a, b, check = true]) => { const d = check && String(a) !== String(b); return `<tr><th scope="row">${esc(l)}</th><td>${esc(a)}</td><td class="${d ? "is-diff" : ""}">${esc(b)}${d ? '<span class="sr-only"> (different)</span>' : ""}</td></tr>`; }).join("")}</tbody>
     </table>`;
@@ -312,12 +312,12 @@
   function viewReview(f) {
     const isHH = f.type === "household";
     const rows = isHH
-      ? [["Household head", f.a.head, f.b.head, "similar"], ["Household coordinates", f.a.coords, `${f.b.coords} · ${f.distance} m from A`, "similar"], ["Number of members", f.a.members, f.b.members],
+      ? [["Household head", f.a.head, f.b.head, "similar"], ["Household coordinates", f.a.coords, `${f.b.coords} · ${f.distance} m from record 1`, "similar"], ["Number of members", f.a.members, f.b.members],
          ["Created by", f.a.by, f.b.by, false], ["Created", f.a.at, f.b.at, false]]
       : [["Full name", f.a.name, f.b.name, "similar"], ["Gender", f.a.gender, f.b.gender], ["Age", f.a.age, f.b.age, "similar"], ["Date of birth", f.a.dob, f.b.dob, "similar"],
          ["ID number", f.a.idNo, f.b.idNo], ["Created by", f.a.by, f.b.by, false], ["Created", f.a.at, f.b.at, false]];
     return `${crumbs([["Home", "index.html"], ["Flag Queue", "#/flags"], [f.id]])}
-      ${head("Review Possible Duplicate", isHH ? "Two households close to each other may be the same household. Compare the households and the people in them, then decide." : "Two people in the same household may be the same person. Compare the records, then decide.")}
+      ${head("Review Duplicates", isHH ? "Two households close to each other may be the same household. Compare the households and the people in them, then decide." : "Two people in the same household may be the same person. Compare the records, then decide.")}
       <div class="signals">${typeTag(f.type)}${tierTag(f.tier)}${f.syncFailed ? tag("Created after a failed sync", "warning") : ""}</div>
       <div class="review-grid">
         <div>
@@ -325,9 +325,9 @@
             <h2 class="card-title">${isHH ? "Households" : "Individuals"}</h2>
             <p class="card-sub">${isHH ? "" : `Household: ${esc(f.household)} · `}Signals matched: ${f.signals.map(esc).join(", ")}</p>
             ${recordPanels(rows, f.a, f.b)}
-            ${f.syncFailed ? `<p class="sync-note">Sync: record B was created after a failed sync. ${esc(f.b.sync)}.</p>` : ""}
+            ${f.syncFailed ? `<p class="sync-note">Sync: record 2 was created after a failed sync. ${esc(f.b.sync)}.</p>` : ""}
             ${f.reason ? `<div class="rec-notes">
-              <div><h3>Worker’s reason</h3><p>The worker ${isHH ? "created household B as a new household" : "added record B as a new person"}: “${esc(f.reason)}”.</p></div>
+              <div><h3>Worker’s reason</h3><p>The worker ${isHH ? "created record 2 as a new household" : "added record 2 as a new person"}: “${esc(f.reason)}”.</p></div>
             </div>` : ""}
             ${isHH ? `<h3 class="sub-title">People in both households</h3>${personPairs(f.pairs)}` : ""}
           </div>
@@ -367,7 +367,7 @@
   // ---------- S3 Delivery alert review ----------
   function viewAlert(f) {
     return `${crumbs([["Home", "index.html"], ["Flag Queue", "#/flags"], [f.id]])}
-      ${head("Review Delivery Alert", "The same child may have been vaccinated twice this round. Check both deliveries, decide and tag the root cause.")}
+      ${head("Review Duplicates", "The same child may have been vaccinated twice this round. Check both deliveries, decide and tag the root cause.")}
       <div class="signals">${typeTag(f.type)}${tierTag(f.tier)}${f.deliveries.some(d => d.failed) ? tag("Recorded after a failed sync", "warning") : ""}</div>
       <div class="review-grid">
         <div>
@@ -376,14 +376,14 @@
             <p class="card-sub">Household: ${esc(f.household)} · ${esc(f.gender)}, ${esc(f.age)} · Round ${f.round}</p>
             ${f.note ? `<p class="card-sub" style="color:var(--text)">${esc(f.note)}</p>` : ""}
             <div class="rec-pair">${f.deliveries.map((d, i) => `<section class="rec" aria-labelledby="dl-${i}">
-                <header class="rec-head"><h3 id="dl-${i}">Delivery ${i + 1}</h3>${d.person ? `<span class="rec-id">${esc(d.person)}</span>` : ""}</header>
+                <header class="rec-head"><h3 id="dl-${i}">Record ${i + 1}</h3>${d.person ? `<span class="rec-id">${esc(d.person)}</span>` : ""}</header>
                 <dl class="rec-rows">
                   <div><dt>Time</dt><dd>${esc(d.time)}</dd></div>
                   <div><dt>Household coordinates</dt><dd>${esc(d.coords)}</dd></div>
                   <div><dt>Worker</dt><dd>${esc(d.worker)}</dd></div>
                 </dl>
               </section>`).join("")}</div>
-            ${f.deliveries.filter(d => d.failed).map(d => `<p class="sync-note">Sync: delivery ${f.deliveries.indexOf(d) + 1} was recorded after a failed sync. ${esc(d.sync)}.</p>`).join("")}
+            ${f.deliveries.filter(d => d.failed).map(d => `<p class="sync-note">Sync: record ${f.deliveries.indexOf(d) + 1} was recorded after a failed sync. ${esc(d.sync)}.</p>`).join("")}
           </div>
         </div>
         <div class="review-side">${decisionCard(f, "delivery")}</div>
@@ -523,7 +523,7 @@
     let html, title = TITLES[section];
     if (section === "flags" && parts[1]) {
       const f = store.flags.find(x => x.id === parts[1]);
-      if (f) { html = f.type === "delivery" ? viewAlert(f) : f.type === "vaccination" ? viewWorkerFlag(f) : viewReview(f); title = f.type === "delivery" ? "Review Delivery Alert" : f.type === "vaccination" ? "Review Flagged Vaccination" : "Review Possible Duplicate"; }
+      if (f) { html = f.type === "delivery" ? viewAlert(f) : f.type === "vaccination" ? viewWorkerFlag(f) : viewReview(f); title = "Review Duplicates"; }
     }
     if (!html) html = viewFlags();
     $page.innerHTML = html;

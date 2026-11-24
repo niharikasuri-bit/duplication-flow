@@ -1,12 +1,12 @@
 /* District Supervisor – mobile app for the registration deduplication prototype.
  * Same flags as the desktop supervisor (possible duplicate households and people),
  * laid out like the inventory app: home tiles, a Pending/Reviewed list of cards,
- * a review screen that compares Record A and Record B field by field, a decision
+ * a review screen that compares Record 1 and Record 2 field by field, a decision
  * screen (root cause + comment) and a success screen.
  *
  *  home      Home tiles
  *  queue     Review Flags list (Pending | Reviewed tabs, search)
- *  review    Review Possible Duplicate
+ *  review    Review Duplicates
  *  decide    Confirm Duplicate / Not a Duplicate: root cause and comment
  *  success   Decision Saved
  */
@@ -209,7 +209,7 @@
         <div><dt>Match</dt><dd>${tierPill(f.tier)}</dd></div>
         ${f.reason ? `<div><dt>Worker’s reason</dt><dd>${esc(f.reason)}</dd></div>` : ""}
       </dl>
-      ${f.syncFailed || (f.deliveries || []).some(d => d.failed) ? `<p class="dq-sync">${f.type === "delivery" ? "One vaccination was recorded after a failed sync." : "Record B was created after a failed sync."}</p>` : ""}
+      ${f.syncFailed || (f.deliveries || []).some(d => d.failed) ? `<p class="dq-sync">${f.type === "delivery" ? "One vaccination was recorded after a failed sync." : "Record 2 was created after a failed sync."}</p>` : ""}
     </div>
     <ul class="dq-legend" aria-label="Highlight key"><li class="k-same">Same</li><li class="k-similar">Similar</li><li class="k-diff">Different</li></ul>`;
   const doneCard = f => f.status !== "Open" ? `<div class="card dq-done">${statusPill(f.status)}<p>Root cause: ${esc(f.rootCause || "–")}</p>${f.comment ? `<p>${esc(f.comment)}</p>` : ""}</div>` : "";
@@ -218,9 +218,9 @@
     const done = f.status !== "Open", [d1, d2] = f.deliveries;
     const rows = [["Child", d1.person || f.title, d2.person || f.title, "similar"], ["Age", f.age, f.age], ["Household", f.household, f.household], ["Time", d1.time, d2.time, false], ["Household coordinates", d1.coords, d2.coords, false]];
     return {
-      title: "Review Double Vaccination",
+      title: "Review Duplicates",
       body: `${flagHead(f)}
-        ${compareTable(rows, "Vaccination 1", "Vaccination 2", "Both vaccinations compared")}
+        ${compareTable(rows, "Record 1", "Record 2", "Record 1 compared with record 2")}
         ${doneCard(f)}`,
       footer: done ? "" : `<button class="btn btn-primary" data-action="decide" data-d="Confirmed">Confirm Double Vaccination</button>
         <button class="btn btn-secondary" data-action="decide" data-d="Not a duplicate">Not a Duplicate</button>`
@@ -230,20 +230,20 @@
     if (flag().type === "delivery") return reviewDelivery(flag());
     const f = flag(), isHH = f.type === "household", done = f.status !== "Open";
     const rows = isHH
-      ? [["Household head", f.a.head, f.b.head, "similar"], ["Number of members", f.a.members, f.b.members], ["Distance", "–", `${f.distance} m from A`, false], ["Household coordinates", f.a.coords, f.b.coords, false], ["Created", f.a.at, f.b.at, false]]
+      ? [["Household head", f.a.head, f.b.head, "similar"], ["Number of members", f.a.members, f.b.members], ["Distance", "–", `${f.distance} m from record 1`, false], ["Household coordinates", f.a.coords, f.b.coords, false], ["Created", f.a.at, f.b.at, false]]
       : [["Full name", f.a.name, f.b.name, "similar"], ["Gender", f.a.gender, f.b.gender], ["Age", f.a.age, f.b.age, "similar"], ["Date of birth", f.a.dob, f.b.dob, "similar"], ["ID number", f.a.idNo, f.b.idNo], ["Household", f.household, f.household], ["Created", f.a.at, f.b.at, false]];
     const parse = s => { if (!s || s === "–") return null; const [name, g, age] = s.split(", "); return { name, gender: { F: "Female", M: "Male" }[g] || g, age }; };
     const people = isHH ? (f.pairs || []).map((p, i) => {
       const a = parse(p.a), b = parse(p.b);
       return `<div class="dq-person">
           <div class="dq-head"><h3 class="dq-subtitle">Person ${i + 1}</h3>${p.match ? tierPill(p.match) : `<span class="dq-pill st-none">No match</span>`}</div>
-          ${compareTable(b ? [["Name", a.name, b.name, "similar"], ["Gender", a.gender, b.gender], ["Age", a.age, b.age, "similar"]] : [["Name", a.name, "–", false], ["Gender", a.gender, "–", false], ["Age", a.age, "–", false]], "Household A", "Household B", `Person ${i + 1} in both households`)}
+          ${compareTable(b ? [["Name", a.name, b.name, "similar"], ["Gender", a.gender, b.gender], ["Age", a.age, b.age, "similar"]] : [["Name", a.name, "–", false], ["Gender", a.gender, "–", false], ["Age", a.age, "–", false]], "Record 1", "Record 2", `Person ${i + 1} in both households`)}
         </div>`;
     }).join("") : "";
     return {
-      title: "Review Possible Duplicate",
+      title: "Review Duplicates",
       body: `${flagHead(f)}
-        ${compareTable(rows, `Record A<span class="pm-id">ID ${esc(f.a.id)}</span>`, `Record B<span class="pm-id">ID ${esc(f.b.id)}</span>`, "Record A compared with record B")}
+        ${compareTable(rows, `Record 1<span class="pm-id">ID ${esc(f.a.id)}</span>`, `Record 2<span class="pm-id">ID ${esc(f.b.id)}</span>`, "Record 1 compared with record 2")}
         ${isHH ? `<h2 class="dq-section">People in both households</h2>${people}` : ""}
         ${doneCard(f)}`,
       footer: done ? "" : `<button class="btn btn-primary" data-action="decide" data-d="Confirmed">Confirm Duplicate</button>
