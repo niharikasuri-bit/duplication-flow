@@ -407,7 +407,6 @@
   // Status chip on member cards (product wording).
   function statusChip(p) {
     const chips = [];
-    if (p.flag && !p.flagServed) chips.push(`<span class="status-chip chip-warn">${ICON.warn}Needs supervisor check</span>`);
     const served = isServed(p);
     if (!served && p.status === "pending") chips.push(`<span class="status-chip chip-pending">${ICON.hourglass}Visit Pending</span>`);
     if (!served && p.status === "not") chips.push(`<span class="status-chip chip-info">Not Administered</span>`);
@@ -560,7 +559,7 @@
           : p.status === "not"
             ? `<button class="btn btn-secondary card-btn" data-action="unable" data-id="${p.id}">Unable to Vaccinate</button>`
             : `<button class="btn btn-primary card-btn" data-action="take-action" data-id="${p.id}">Take Action</button>`;
-        return `<li><article class="member-card ${p.flag ? "is-flagged" : ""}" aria-labelledby="m-${p.id}">
+        return `<li><article class="member-card" aria-labelledby="m-${p.id}">
           <div class="member-top">
             <h3 class="member-name" id="m-${p.id}">${esc(p.name)}</h3>
             ${served ? "" : `<button class="edit-link" data-action="not-in-prototype" aria-label="Edit ${esc(p.name)}">${ICON.edit}Edit</button>`}
@@ -568,8 +567,7 @@
           <p class="member-sub"><span>${esc(p.gender || "Gender not recorded")}</span><span class="sep" aria-hidden="true"></span><span>${esc(ageLabel(p.age))}</span></p>
           ${statusChip(p)}
           ${isChild(p) && p.deliverBack ? `<p class="card-warn">${ICON.warn}<span>This vaccination record is flagged as wrong. Ask the caregiver, then vaccinate if needed.</span></p>` : ""}
-          ${isChild(p) && !served && p.flag ? `<p class="card-warn">${ICON.warn}<span>May be registered twice. Your supervisor will check. You can still vaccinate.</span></p>` : ""}
-          ${isChild(p) && !served && !p.flag && !store.synced ? `<p class="card-warn">${ICON.warn}<span>Sync failed. Recent vaccinations may be missing. Ask the caregiver before you vaccinate.</span></p>` : ""}
+          ${isChild(p) && !served && !store.synced ? `<p class="card-warn">${ICON.warn}<span>Sync failed. Recent vaccinations may be missing. Ask the caregiver before you vaccinate.</span></p>` : ""}
           ${btn}
         </article></li>`;
       };
