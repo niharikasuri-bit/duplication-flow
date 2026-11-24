@@ -23,7 +23,7 @@
   // ---------- Config ----------
   const ASSIGNED_AREA = "Solimbo";
   const NEARBY_M = 50;            // households compared at creation
-  const STORE_KEY = "duplication-flow-v2";
+  const STORE_KEY = "duplication-flow-v3";
 
   const SCREENS = {
     home:       { name: "Home", desc: "Check the data on this device before you start." },
@@ -84,9 +84,9 @@
   ];
 
   // Confirmed by the supervisor as the same child as Hawa Bah (FLG linked); served in this household.
-  const LINKED_HH = () => ({ id: "hh-7", head: "Mamadu Bah", m: 180, members: [
-    { id: "p-71", name: "Mamadu Bah", gender: "Male", age: Y(36), head: true },
-    { id: "p-72", name: "Awa Bah", gender: "Female", age: Y(2, 6), status: "done", servedAt: "Today, 09:05", servedBy: "S. Turay", servedWhere: "Mamadu Bah’s household", linkedTo: "p-32" }
+  const LINKED_HH = () => ({ id: "hh-7", head: "Sorie Bah", m: 180, members: [
+    { id: "p-71", name: "Sorie Bah", gender: "Male", age: Y(36), head: true },
+    { id: "p-72", name: "Awa Bah", gender: "Female", age: Y(2, 6), status: "done", servedAt: "Today, 09:05", servedBy: "S. Turay", servedWhere: "Sorie Bah’s household", linkedTo: "p-32" }
   ] });
 
   const ID_TYPES = ["National ID", "Birth certificate", "Not available"];
