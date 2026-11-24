@@ -104,6 +104,7 @@
   const ID_TYPES = ["National ID", "Birth certificate", "Not available"];
   const NEW_PERSON_REASONS = ["Twin or sibling", "Different person with a similar name", "Checked with the caregiver", "Other"];
   const NEW_HOUSEHOLD_REASONS = ["Different family with a similar name", "Checked with the household", "Household moved or split", "Other"];
+  const FLAG_SERVED_REASONS = ["Wrong child marked as vaccinated", "Child was not vaccinated", "Vaccinated twice this round", "Other"];
   const HEAD_MIN_MONTHS = 18 * 12;   // household head must be 18 or older
   const CHECKLIST = [
     { id: "chk-drops", label: "Two drops administered" },
@@ -401,10 +402,11 @@
   // Status chip on member cards (product wording).
   function statusChip(p) {
     const chips = [];
-    if (p.flag) chips.push(`<span class="status-chip chip-warn">${ICON.warn}Needs supervisor check</span>`);
+    if (p.flag && !p.flagServed) chips.push(`<span class="status-chip chip-warn">${ICON.warn}Needs supervisor check</span>`);
     if (p.status === "pending") chips.push(`<span class="status-chip chip-pending">${ICON.hourglass}Visit Pending</span>`);
     if (p.status === "not") chips.push(`<span class="status-chip chip-info">Not Administered</span>`);
     if (p.status === "done") chips.push(`<span class="status-chip chip-ok">${ICON.tick}Vaccinated</span>`);
+    if (p.flagServed) chips.push(`<span class="status-chip chip-warn">${ICON.warn}Flagged for supervisor</span>`);
     return chips.length ? `<div class="chip-row">${chips.join("")}</div>` : "";
   }
 
@@ -547,7 +549,7 @@
         // Already served this round: no Take Action. Show who, when and where, with an option to flag.
         const btn = !isChild(p) ? ""
           : p.status === "done"
-            ? `${p.flag ? "" : `<button class="btn btn-secondary card-btn" data-action="flag-served" data-id="${p.id}">Flag for Supervisor</button>`}`
+            ? `${p.flagServed ? "" : `<button class="btn btn-secondary card-btn" data-action="flag-served" data-id="${p.id}">Flag for Supervisor</button>`}`
           : p.status === "not"
             ? `<button class="btn btn-secondary card-btn" data-action="unable" data-id="${p.id}">Unable to Vaccinate</button>`
             : `<button class="btn btn-primary card-btn" data-action="take-action" data-id="${p.id}">Take Action</button>`;
@@ -574,7 +576,8 @@
             </dl>
             <ul class="member-list">${h.members.map(card).join("")}</ul>
           </div>
-          ${deliveryAlertHtml()}`,
+          ${deliveryAlertHtml()}
+          ${flagServedHtml()}`,
         footer: `<button class="btn btn-primary" data-action="add-member">${ICON.personAdd}Add Member</button>`
       };
     },
@@ -847,6 +850,22 @@
           <button class="btn btn-primary" data-action="view-matches">View Matches</button>
           <button class="btn btn-secondary" data-action="continue-current">Continue Current Registration</button>
         </div>
+      </div>
+    </div>`;
+  }
+
+  // Flag a vaccinated record: warning alert (settlement style) asking why.
+  let flagServedOpen = false;
+  function flagServedHtml() {
+    if (!flagServedOpen) return "";
+    const p = member();
+    return `<div class="dialog-backdrop" id="flag-dialog">
+      <div class="dialog alert" role="alertdialog" aria-modal="true" aria-labelledby="flag-title" aria-describedby="flag-desc">
+        <button class="dialog-close" data-action="close-flag" aria-label="Close">${ICON.close}</button>
+        ${ICON.alertWarn}
+        <h2 class="dialog-title" id="flag-title">Flag for Supervisor</h2>
+        <p class="dialog-desc" id="flag-desc"><strong>${esc(p.name)}</strong> is marked as vaccinated this round. Why is this record wrong?</p>
+        <div class="dialog-actions">${FLAG_SERVED_REASONS.map(r => `<button class="btn btn-secondary" data-action="flag-reason" data-r="${esc(r)}">${esc(r)}</button>`).join("")}</div>
       </div>
     </div>`;
   }
@@ -1153,9 +1172,17 @@
     vaccinate() { deliveryAlert = ""; go("checklist"); },
     "flag-served"(btn) {
       state.memberId = btn.dataset.id;
-      member().flag = true; save();
+      flagServedOpen = true;
       render({ focusTitle: false });
-      toast("Flagged. Your supervisor will check this child’s records.");
+      document.querySelector("#flag-dialog .btn")?.focus();
+    },
+    "close-flag"() { flagServedOpen = false; render({ focusTitle: false }); },
+    "flag-reason"(btn) {
+      const p = member();
+      p.flagServed = true; p.flagReason = btn.dataset.r; save();
+      flagServedOpen = false;
+      render({ focusTitle: false });
+      toast("Flagged. Your supervisor will check this record.");
     },
     "close-delivery"() { deliveryAlert = ""; render({ focusTitle: false }); },
     hold() {
@@ -1227,6 +1254,7 @@
     if (document.getElementById("compare-dialog")) ACTIONS["close-compare"]();
     if (document.getElementById("many-dialog")) ACTIONS["close-many"]();
     if (document.getElementById("delivery-dialog")) ACTIONS["close-delivery"]();
+    if (document.getElementById("flag-dialog")) ACTIONS["close-flag"]();
   });
 
   // ---------- Prototype controls (outside the phone) ----------
