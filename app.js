@@ -34,7 +34,6 @@
     individual: { name: "Individual Details", desc: "Add the details of the person you are registering." },
     matches:    { name: "Existing Matches", desc: "Select the record that matches the person you are registering." },
     reason:     { name: "Add as New Person", desc: "Tell us why this is a different person." },
-    check:      { name: "Vaccination Check", desc: "Check whether this child was already vaccinated this round." },
     checklist:  { name: "Vaccination Checklist", desc: "Confirm the vaccination by completing the checklist." },
     success:    { name: "Vaccination Successful", desc: "Vaccination has been recorded successfully." }
   };
@@ -466,7 +465,6 @@
     const n = store.pending;
     let b = null;
     if (!syncOk()) b = ["error", store.continued ? "Sync failed. Continuing without the latest data." : "Sync failed. Recent records may be missing.", "Retry", "retry-sync"];
-    else if (n) b = ["info", `${plural(n, "record")} waiting to sync.`, "", ""];
     if (!b) return "";
     return `<div class="sys-banner banner-${b[0]}" role="status">${ICON[b[0] === "error" ? "stop" : "info"]}<span>${esc(b[1])}</span>${b[2] ? `<button class="banner-btn" data-action="${b[3]}">${esc(b[2])}</button>` : ""}</div>`;
   }
@@ -559,7 +557,8 @@
               <div class="pair"><dt>Member Count</dt><dd>${String(Math.max(h.size || 0, h.members.length)).padStart(2, "0")}</dd></div>
             </dl>
             <ul class="member-list">${h.members.map(card).join("")}</ul>
-          </div>`,
+          </div>
+          ${deliveryAlertHtml()}`,
         footer: `<button class="btn btn-primary" data-action="add-member">${ICON.personAdd}Add Member</button>`
       };
     },
@@ -637,39 +636,6 @@
           ${confirmDialogHtml()}`,
         footer: `<button class="btn btn-primary" data-action="reason-submit">${ICON.personAdd}Add as New Person</button>
           <button class="btn btn-secondary" data-action="needs-check">Needs Supervisor Check</button>`
-      };
-    },
-
-    // W10
-    check() {
-      const p = member();
-      let box, footer;
-      if (p.status === "done") {
-        box = notice("error", `<b>Already vaccinated this round.</b> ${esc(p.servedAt)} by ${esc(p.servedBy)} at ${esc(p.servedWhere || "this household")}. Don’t vaccinate again.`);
-        footer = `<button class="btn btn-primary" data-action="to-overview">Back to Household</button><button class="btn btn-secondary" data-action="hold">Flag for Supervisor</button>`;
-      } else if (p.flag) {
-        box = notice("warn", "<b>This child may be registered twice.</b> Your supervisor will check the records. You can still vaccinate, so the child isn’t missed.");
-        footer = `<button class="btn btn-primary" data-action="vaccinate">Vaccinate</button><button class="btn btn-secondary" data-action="hold">Hold and Flag</button>`;
-      } else if (!store.synced) {
-        box = notice("warn", "<b>Sync failed.</b> Recent vaccinations may be missing. Ask the caregiver whether the child was vaccinated this round.");
-        footer = `<button class="btn btn-primary" data-action="vaccinate">Vaccinate</button><button class="btn btn-secondary" data-action="hold">Hold and Flag</button>`;
-      } else {
-        box = notice("ok", "<b>Not vaccinated this round.</b> You can vaccinate this child.");
-        footer = `<button class="btn btn-primary" data-action="vaccinate">Vaccinate</button>`;
-      }
-      return {
-        tag: ASSIGNED_AREA,
-        body: `${title("Vaccination Check")}
-          <div class="card">
-            <dl class="pairs">
-              <div class="pair"><dt>Name</dt><dd>${esc(p.name)}</dd></div>
-              <div class="pair"><dt>Gender</dt><dd>${esc(p.gender || "–")}</dd></div>
-              <div class="pair"><dt>Age</dt><dd>${esc(ageLabel(p.age))}</dd></div>
-              <div class="pair"><dt>Last sync</dt><dd>${esc(syncResult(store.synced))}</dd></div>
-            </dl>
-          </div>
-          ${box}`,
-        footer
       };
     },
 
@@ -809,6 +775,30 @@
           <button class="btn btn-primary" data-action="close-confirm">Go Back</button>
           <button class="btn btn-secondary" data-action="confirm-new">Add New Person Anyway</button>
         </div>
+      </div>
+    </div>`;
+  }
+
+  // W10: shown on Household Overview only when the child is not clear to vaccinate.
+  let deliveryAlert = "";   // "" | served | flag | sync
+  function deliveryAlertHtml() {
+    if (!deliveryAlert) return "";
+    const p = member(), n = `<strong>${esc(p.name)}</strong>`;
+    const a = {
+      served: ["Already Vaccinated", `${n} was vaccinated this round. ${esc(p.servedAt)} by ${esc(p.servedBy)} at ${esc(p.servedWhere || "this household")}. Don’t vaccinate again.`,
+        `<button class="btn btn-primary" data-action="close-delivery">Back to Household</button><button class="btn btn-secondary" data-action="hold">Flag for Supervisor</button>`],
+      flag: ["Possible Duplicate", `${n} may be registered twice. Your supervisor will check the records. You can still vaccinate, so the child isn’t missed.`,
+        `<button class="btn btn-primary" data-action="vaccinate">Vaccinate</button><button class="btn btn-secondary" data-action="hold">Hold and Flag</button>`],
+      sync: ["Sync Failed", `Recent vaccinations may be missing. Ask the caregiver whether ${n} was vaccinated this round.`,
+        `<button class="btn btn-primary" data-action="vaccinate">Vaccinate</button><button class="btn btn-secondary" data-action="hold">Hold and Flag</button>`]
+    }[deliveryAlert];
+    return `<div class="dialog-backdrop" id="delivery-dialog">
+      <div class="dialog alert" role="alertdialog" aria-modal="true" aria-labelledby="dl-title" aria-describedby="dl-desc">
+        <button class="dialog-close" data-action="close-delivery" aria-label="Close">${ICON.close}</button>
+        ${ICON.alertWarn}
+        <h2 class="dialog-title" id="dl-title">${a[0]}</h2>
+        <p class="dialog-desc" id="dl-desc">${a[1]}</p>
+        <div class="dialog-actions">${a[2]}</div>
       </div>
     </div>`;
   }
@@ -1027,7 +1017,15 @@
 
     // W5
     "add-member"() { state.person = blankPerson(); go("individual"); },
-    "take-action"(btn) { state.memberId = btn.dataset.id; go("check"); },
+    // W10 delivery check: clear → straight to the checklist; otherwise an alert on the household.
+    "take-action"(btn) {
+      state.memberId = btn.dataset.id;
+      const p = member();
+      deliveryAlert = p.status === "done" ? "served" : p.flag ? "flag" : !store.synced ? "sync" : "";
+      if (!deliveryAlert) return go("checklist");
+      render({ focusTitle: false });
+      document.querySelector("#delivery-dialog .btn-primary")?.focus();
+    },
     unable() { toast("Recording a reason isn’t part of the prototype."); },
 
     // W6
@@ -1095,9 +1093,11 @@
     },
 
     // W10
-    vaccinate() { go("checklist"); },
+    vaccinate() { deliveryAlert = ""; go("checklist"); },
+    "close-delivery"() { deliveryAlert = ""; render({ focusTitle: false }); },
     hold() {
       member().flag = true; save();
+      deliveryAlert = "";
       backTo("overview");
       toast("Vaccination on hold. Your supervisor will check this child’s records.");
     },
@@ -1164,6 +1164,7 @@
     ["quick-dialog", "confirm-dialog"].forEach(id => { const d = document.getElementById(id); if (d && !d.hidden) closeDialog(id); });
     if (document.getElementById("nearby-dialog")) ACTIONS["close-nearby"]();
     if (document.getElementById("compare-dialog")) ACTIONS["close-compare"]();
+    if (document.getElementById("delivery-dialog")) ACTIONS["close-delivery"]();
   });
 
   // ---------- Prototype controls (outside the phone) ----------
