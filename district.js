@@ -216,7 +216,7 @@
 
   function reviewDelivery(f) {
     const done = f.status !== "Open", [d1, d2] = f.deliveries;
-    const rows = [["Child", d1.person || f.title, d2.person || f.title, "similar"], ["Age", f.age, f.age], ["Household", f.household, f.household], ["Time", d1.time, d2.time, false], ["Household coordinates", d1.coords, d2.coords, false], ["Device sync", d1.sync, d2.sync, false]];
+    const rows = [["Child", d1.person || f.title, d2.person || f.title, "similar"], ["Age", f.age, f.age], ["Household", f.household, f.household], ["Time", d1.time, d2.time, false], ["Household coordinates", d1.coords, d2.coords, false]];
     return {
       title: "Review Double Vaccination",
       body: `${flagHead(f)}
@@ -230,7 +230,7 @@
     if (flag().type === "delivery") return reviewDelivery(flag());
     const f = flag(), isHH = f.type === "household", done = f.status !== "Open";
     const rows = isHH
-      ? [["Household head", f.a.head, f.b.head, "similar"], ["Number of members", f.a.members, f.b.members], ["Distance", "–", `${f.distance} m from A`, false], ["Household coordinates", f.a.coords, f.b.coords, false], ["Created", f.a.at, f.b.at, false], ["Sync at creation", f.a.sync, f.b.sync, false]]
+      ? [["Household head", f.a.head, f.b.head, "similar"], ["Number of members", f.a.members, f.b.members], ["Distance", "–", `${f.distance} m from A`, false], ["Household coordinates", f.a.coords, f.b.coords, false], ["Created", f.a.at, f.b.at, false]]
       : [["Full name", f.a.name, f.b.name, "similar"], ["Gender", f.a.gender, f.b.gender], ["Age", f.a.age, f.b.age, "similar"], ["Date of birth", f.a.dob, f.b.dob, "similar"], ["ID number", f.a.idNo, f.b.idNo], ["Household", f.household, f.household], ["Created", f.a.at, f.b.at, false]];
     const parse = s => { if (!s || s === "–") return null; const [name, g, age] = s.split(", "); return { name, gender: { F: "Female", M: "Male" }[g] || g, age }; };
     const people = isHH ? (f.pairs || []).map((p, i) => {

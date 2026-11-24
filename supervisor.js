@@ -313,9 +313,9 @@
     const isHH = f.type === "household";
     const rows = isHH
       ? [["Household head", f.a.head, f.b.head, "similar"], ["Household coordinates", f.a.coords, `${f.b.coords} · ${f.distance} m from A`, "similar"], ["Number of members", f.a.members, f.b.members],
-         ["Created by", f.a.by, f.b.by, false], ["Created", f.a.at, f.b.at, false], ["Sync at creation", f.a.sync, f.b.sync, false]]
+         ["Created by", f.a.by, f.b.by, false], ["Created", f.a.at, f.b.at, false]]
       : [["Full name", f.a.name, f.b.name, "similar"], ["Gender", f.a.gender, f.b.gender], ["Age", f.a.age, f.b.age, "similar"], ["Date of birth", f.a.dob, f.b.dob, "similar"],
-         ["ID number", f.a.idNo, f.b.idNo], ["Created by", f.a.by, f.b.by, false], ["Created", f.a.at, f.b.at, false], ["Sync at creation", f.a.sync, f.b.sync, false]];
+         ["ID number", f.a.idNo, f.b.idNo], ["Created by", f.a.by, f.b.by, false], ["Created", f.a.at, f.b.at, false]];
     return `${crumbs([["Home", "index.html"], ["Flag Queue", "#/flags"], [f.id]])}
       ${head("Review Possible Duplicate", isHH ? "Two households close to each other may be the same household. Compare the households and the people in them, then decide." : "Two people in the same household may be the same person. Compare the records, then decide.")}
       <div class="signals">${typeTag(f.type)}${tierTag(f.tier)}${f.syncFailed ? tag("Created after a failed sync", "warning") : ""}</div>
@@ -325,6 +325,7 @@
             <h2 class="card-title">${isHH ? "Households" : "Individuals"}</h2>
             <p class="card-sub">${isHH ? "" : `Household: ${esc(f.household)} · `}Signals matched: ${f.signals.map(esc).join(", ")}</p>
             ${recordPanels(rows, f.a, f.b)}
+            ${f.syncFailed ? `<p class="sync-note">Sync: record B was created after a failed sync. ${esc(f.b.sync)}.</p>` : ""}
             ${f.reason ? `<div class="rec-notes">
               <div><h3>Worker’s reason</h3><p>The worker ${isHH ? "created household B as a new household" : "added record B as a new person"}: “${esc(f.reason)}”.</p></div>
             </div>` : ""}
@@ -367,7 +368,7 @@
   function viewAlert(f) {
     return `${crumbs([["Home", "index.html"], ["Flag Queue", "#/flags"], [f.id]])}
       ${head("Review Delivery Alert", "The same child may have been vaccinated twice this round. Check both deliveries, decide and tag the root cause.")}
-      <div class="signals">${typeTag(f.type)}${tierTag(f.tier)}</div>
+      <div class="signals">${typeTag(f.type)}${tierTag(f.tier)}${f.deliveries.some(d => d.failed) ? tag("Recorded after a failed sync", "warning") : ""}</div>
       <div class="review-grid">
         <div>
           <div class="card card-pad">
@@ -380,9 +381,9 @@
                   <div><dt>Time</dt><dd>${esc(d.time)}</dd></div>
                   <div><dt>Household coordinates</dt><dd>${esc(d.coords)}</dd></div>
                   <div><dt>Worker</dt><dd>${esc(d.worker)}</dd></div>
-                  <div class="${d.failed ? "is-diff" : ""}"><dt>Device sync</dt><dd>${esc(d.sync)}</dd></div>
                 </dl>
               </section>`).join("")}</div>
+            ${f.deliveries.filter(d => d.failed).map(d => `<p class="sync-note">Sync: delivery ${f.deliveries.indexOf(d) + 1} was recorded after a failed sync. ${esc(d.sync)}.</p>`).join("")}
           </div>
         </div>
         <div class="review-side">${decisionCard(f, "delivery")}</div>
